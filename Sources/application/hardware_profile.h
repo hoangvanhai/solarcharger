@@ -1,0 +1,24 @@
+/*
+ * hardware_profile.h
+ *
+ *  Created on: Aug 22, 2018
+ *      Author: MSI
+ */
+
+#ifndef HARDWARE_PROFILE_H_
+#define HARDWARE_PROFILE_H_
+
+
+#define PIN_DISP_BATT_EMPTY		GPIO_PTD2
+#define PIN_DISP_BATT_LOW		GPIO_PTD3
+#define PIN_DISP_BATT_CHARG		GPIO_PTD4
+#define PIN_DISP_BATT_FULL		GPIO_PTF0
+#define PIN_DISP_RUNNING		GPIO_PTF1
+#define PIN_CTRL_BUCK_DRV		GPIO_PTB3			
+#define PIN_CTRL_VUSB_EN		GPIO_PTF5
+#define PIN_CTRL_LOAD_EN		GPIO_PTF4
+#define PIN_CTRL_U1_16			GPIO_PTE6
+#define PIN_CTRL_U1_48			GPIO_PTA2
+
+
+#endif /* HARDWARE_PROFILE_H_ */
