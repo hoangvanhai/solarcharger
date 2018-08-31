@@ -6,7 +6,7 @@
 #include <string.h>
 #include "app_cfg.h"
 #include <bsp.h>
-
+#include <app.h>
 /************************** Constant Definitions *****************************/
 
 /**************************** Type Definitions *******************************/
@@ -77,6 +77,7 @@ void Debug_Task(void *arg) {
 		shell_clear_buffer();
 		isGetCmd = FALSE;
 		LREP(SHELL_PROMPT);
+		//sApp.eDevPendCmd = CMD_NONE;
 	}
 }
 
@@ -225,7 +226,7 @@ void shell_help(void)
 
   while (cur_command->name)
   {
-    LREP(">%7s %-32s- %s\r\n", cur_command->name,
+    LREP(">%7s %-14s- %s\r\n", cur_command->name,
                                       cur_command->syntax,
                                       cur_command->description);
     cur_command++;

@@ -8,19 +8,23 @@
 #ifndef APP_CFG_H_
 #define APP_CFG_H_
 
-#define DEBUG
-#define CONSOLE
+#define		APP_SETTING_PASSWD				("1234")
+#define		APP_DEVICE_ID					(1)
+
+#define 	DEBUG
+#define 	CONSOLE
 
 #define		MILLI_SEC_ON_HOUR				(7200000)
 #define 	MILLI_SEC_ON_MINUTE				(120000)
 
-#define		APP_CHARGE_CONST_VOLT_TIME		(1 * MILLI_SEC_ON_HOUR)	// const volt on 3 hours
-#define		APP_CHARGE_CONST_CURR_TIME		(2 * MILLI_SEC_ON_MINUTE)	// Second
+#define		APP_CHARGE_CONST_VOLT_TIME		(120 * MILLI_SEC_ON_MINUTE)	// const volt on 3 hours
+//#define		APP_CHARGE_CONST_CURR_TIME		(2 * MILLI_SEC_ON_MINUTE)	// Second
 
 #define 	APP_TIMER_FREQ					(1000)	//Hz
 #define 	ADC_READ_FREQ					(1000)	//Hz
 
 #define 	BATT_VOLT_FULL_VALUE			(14200)	// mVolt
+#define 	BATT_VOLT_FLOAT_VALUE			(13800) // mVolt
 #define 	BATT_VOLT_LOW_VALUE				(13000)	// mVolt
 #define 	BATT_VOLT_EMPTY_VALUE			(9000)	// mVolt
 
@@ -58,6 +62,7 @@
 #define		CONTROL_PID						0
 #define		CONTROL_THRESHOLD				1
 #define 	BUCKER_CONTROL_METHOD			CONTROL_THRESHOLD
+
 
 
 #endif /* APP_CFG_H_ */

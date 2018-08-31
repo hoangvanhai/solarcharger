@@ -28,6 +28,7 @@ typedef enum EDeviceState_ {
     DS_BATT_VOLT_EMPTY	 = 0x0020,
     DS_PANEL_CURR_HIGH	 = 0x0040,
     DS_BATT_CURR_ZERO	 = 0x0080,
+    DS_USER_DISABLE		 = 0x0100,
     DS_ERR_UNKNOWN       = 0x0000
 }EDeviceState;
 
@@ -38,8 +39,23 @@ typedef enum EBuckerSM_ {
     BSM_BUCKER_CHARG_MPPT_VOLT_CTRL,
     BSM_BUCKER_CHARG_VOLT_MAX,
     BSM_BUCKER_IDLE,
+    BSM_BUCKER_MAX,
 }EBuckerSM;
 
+
+typedef enum EDevCommand_ {
+	CMD_NONE = 0,
+	CMD_ON_OFF_CHARGE,
+	CMD_ON_OFF_VUSB,
+	CMD_SET_BOARD_ID,
+	CMD_SET_FLOAT_VOLT,
+	CMD_SET_BOOST_VOLT,
+	CMD_SET_CURR_MAX,
+	CMD_SET_BOOST_TIME,
+	CMD_GET_BOARD_STT,
+	CMD_SET_LOG_STT,
+	CMD_RESTART
+}EDevCmd;
 
 typedef struct SAdcValue_{
     uint8_t         type;
@@ -65,6 +81,7 @@ typedef struct SSolarPanelInfo_ {
 }SSPInfo;
 
 typedef struct SApp_ {
+	uint8_t			id;
 	// state
 	EDeviceState	eDevState;
 	EBuckerSM		eBuckerSM;
@@ -84,6 +101,8 @@ typedef struct SApp_ {
 	float			battLastVolt;
 	float			battCurr;
 	float			battLastCurr;
+	float			floatBattVolt;
+	
 	
 	// control
 	void 			*hTimerControl;
@@ -98,8 +117,14 @@ typedef struct SApp_ {
 	// setting
 	float			chargMaxCurrent;
 	float			chargMaxVolt;
+	float			chargFloatVolt;
 	uint32_t		chargConstVoltTime;
-	uint32_t		chargConstCurrTime;
+	uint8_t			vUsb;;
+	
+	EDevCmd			eDevPendCmd;
+	float			cmdParam;
+	
+	
 	
 }SApp;
 
@@ -192,7 +217,7 @@ typedef struct SApp_ {
 												FTM_SetChannelValue(FTM0, FTM_CHANNEL_CHANNEL0, (int)((float)FTM0->MOD*percen));}
 
 #define App_StartBucker(pApp)				{	\
-												pApp->currDutyPer = 0.55; 				\
+												pApp->currDutyPer = 0.65; 				\
 												App_SetDutyPercen(pApp->currDutyPer);	\
 												GPIO_SET_HIGH_CTRL_BUCK_DRV(); 			\
 												GPIO_SET_HIGH_DISP_BATT_CHARG(); 			\

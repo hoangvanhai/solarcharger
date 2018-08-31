@@ -45,7 +45,15 @@
 /******************************************************************************
 * Local variables
 ******************************************************************************/
-
+const char *logo_msg = {"\r\n\n"
+		"  *******  ******     ***    \r\n"
+		"  **   *   **   *    *   *   \r\n"
+		"  *        *          *       \r\n"
+		" *****    *****        *      \r\n"
+		" **       **            *     \r\n"
+		" *        *        *     *     \r\n"
+		"**     *  **     * *     *      \r\n"
+		"*******  ********   ****        \r\n"};
 /******************************************************************************
 * Global functions
 ******************************************************************************/
@@ -79,6 +87,7 @@ int main (void)
 {
     BSP_Init(); 
     App_Init(&sApp);
+    LREP(logo_msg);
     LREP("\r\napplication started built time " __TIME__ " " __DATE__"\r\n\n");
     shell_init(cmd_table, my_shell_init);
     
@@ -92,14 +101,18 @@ int main (void)
 	ASSERT(sApp.task_control != NULL);
 	ASSERT(sApp.task_shell != NULL);	
 	
-	LREP("task create done \r\n\n");
+	LREP("firmware version 1.0.0\r\n\n");
+	LREP("initilized done !\r\n\n");
+	LREP("type \"help\" to show support command\r\n\n");
+	
 	LREP(SHELL_PROMPT);
     while (1) {        
         Adc_CalcRealValueBgrd(sApp.panelVolt);
         Adc_CalcRealValueBgrd(sApp.panelCurr);
-        Adc_CalcRealValueBgrd(sApp.battVolt);
-        if(sApp.battVolt.realValue > BATT_VOLT_EMPTY_VALUE) {
-			sApp.panelPower = sApp.panelVolt.realValue * sApp.panelCurr.realValue; 
+        Adc_CalcRealValueBgrd(sApp.battVolt);        
+        sApp.panelPower = sApp.panelVolt.realValue * sApp.panelCurr.realValue;
+        
+        if(sApp.battVolt.realValue > BATT_VOLT_EMPTY_VALUE) {			 
 			sApp.battCurr = sApp.panelPower * POWER_FACTOR / sApp.battVolt.realValue;
         } else {
         	sApp.battCurr = 0;        	
