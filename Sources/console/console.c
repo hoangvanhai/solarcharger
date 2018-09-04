@@ -21,6 +21,7 @@ uint32_t 	debug_port = NULL;
 #ifdef DEBUG
 
 volatile uint8_t isGetCmd = FALSE;
+volatile uint8_t isPwdMode = FALSE;
 static const shell_command_t *shell_cmd_table;
 uint32_t shell_cmdline_pos;
 char shell_cmdline[SHELL_CMDLINE_SIZE];
@@ -72,12 +73,21 @@ void Debug_TX_ISRHandler()
 
 void Debug_Task(void *arg) {
 	(void)arg;
+	uint8_t err = 0;
 	if(isGetCmd) {
-		shell_exec();
-		shell_clear_buffer();
+		err = shell_exec();
+		shell_clear_buffer();		
 		isGetCmd = FALSE;
-		LREP(SHELL_PROMPT);
-		//sApp.eDevPendCmd = CMD_NONE;
+		if(isPwdMode == FALSE) {
+			LREP(SHELL_PROMPT);		
+		} else {
+			shell_push_buffer("pass ", 5);
+			LREP("password: ");
+		}
+		if(err == SHELL_CMD_ERR_INVALID_SYNTAX) {
+			//LREP(SHELL_PROMPT);
+			isPwdMode = FALSE;
+		}
 	}
 }
 
@@ -117,7 +127,11 @@ uint8_t PushCommand(uint8_t ch)
 				{
 					shell_cmdline[shell_cmdline_pos] = (char)ch;
 					shell_cmdline_pos++;
-					out_char((char)ch);
+					if(isPwdMode == FALSE) {
+						out_char((char)ch);
+					} else {
+						out_char('*');
+					}
 				}
 			}
 			  break;
@@ -183,8 +197,9 @@ static int32_t shell_make_argv(char *cmdline, char *argv[])
 	return argc;
 }
 
-void shell_exec(void)
+uint8_t shell_exec(void)
 {
+	uint8_t err = 0;
 	char *argv[SHELL_ARGS_MAX + 1u]; /* One extra for 0 terminator.*/
 	int32_t argc;
 	argc = shell_make_argv(shell_cmdline, argv);
@@ -206,6 +221,7 @@ void shell_exec(void)
 				else /* Wrong command syntax. */
 				{
 					LREP(SHELL_ERR_SYNTAX, argv[0]);
+					err++;					
 				}
 
 				break;
@@ -216,8 +232,12 @@ void shell_exec(void)
 		if (cur_command->name == 0)
 		{
 			LREP(SHELL_ERR_CMD, argv[0]);
+			return SHELL_CMD_ERR_INVALID_CMD;
 		}
 	}
+	if(err > 0)
+		return SHELL_CMD_ERR_INVALID_SYNTAX;
+	return SHELL_CMD_ERR_NONE;
 }
 
 void shell_help(void)
@@ -240,6 +260,13 @@ void shell_set_command(const char *cmd, uint32_t size) {
 	memcpy((char*)shell_cmdline, (const char*)cmd, size);
 	shell_cmdline[size] = '\0';
 	isGetCmd = TRUE;
+}
+
+void shell_push_buffer(const char *cmd, uint32_t size) {
+	if(size > SHELL_CMDLINE_SIZE) return;
+	shell_cmdline_pos = size;
+	memcpy((char*)shell_cmdline, (const char*)cmd, size);
+	shell_cmdline[size] = '\0';	
 }
 
 void shell_clear_buffer() {

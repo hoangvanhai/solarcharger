@@ -38,6 +38,7 @@ typedef enum EBuckerSM_ {
     BSM_BUCKER_CHARG_CONST_CURR,
     BSM_BUCKER_CHARG_MPPT_VOLT_CTRL,
     BSM_BUCKER_CHARG_VOLT_MAX,
+    BSM_BUCKER_CHARG_VOLT_FLOAT,
     BSM_BUCKER_IDLE,
     BSM_BUCKER_MAX,
 }EBuckerSM;
@@ -100,8 +101,7 @@ typedef struct SApp_ {
 	SAdcValue		battVolt;
 	float			battLastVolt;
 	float			battCurr;
-	float			battLastCurr;
-	float			floatBattVolt;
+	float			battLastCurr;	
 	
 	
 	// control
@@ -115,10 +115,10 @@ typedef struct SApp_ {
 	float			currDutyPer;
 	
 	// setting
-	float			chargMaxCurrent;
-	float			chargMaxVolt;
+	float			chargBoostCurrent;
+	float			chargBoostVolt;
 	float			chargFloatVolt;
-	uint32_t		chargConstVoltTime;
+	uint32_t		chargBoostTime;
 	uint8_t			vUsb;;
 	
 	EDevCmd			eDevPendCmd;
@@ -235,6 +235,7 @@ typedef struct SApp_ {
 												(pApp)->sSPInfo.currCurr = 0;  (pApp)->sSPInfo.currVolt = 0; \
 												(pApp)->sSPInfo.currPower = 0; \
 											}
+
 
 /*
 #define App_PidProcess(pApp, measVoltage) { 						\

@@ -73,11 +73,11 @@ void Task_Gui(void *arg) {
 //			(int)(Timer_GetCurrCount(sApp.hTimerControl)),
 //			(int)(sApp.eDevState));
 	
-	LREP("pv: %d pvs: %d pi %d pp: %d bC %d duty: 0.%03d stat: 0x%x\r\n",  
+	LREP("pv: %d pvs: %d pi %d pp: %d bi %d duty: 0.%03d stat: 0x%x\r\n",  
 				(int)(sApp.panelVolt.realValue),
 				(int)(sApp.sMppt.VmppOut),				
 				(int)(sApp.panelCurr.realValue),
-				(int)(sApp.sMppt.PanelPower),
+				(int)(sApp.panelPower),
 				(int)(sApp.battCurr),
 				(int)(sApp.currDutyPer * 1000.0),				
 				(int)(sApp.eDevState));
@@ -88,21 +88,22 @@ int main (void)
     BSP_Init(); 
     App_Init(&sApp);
     LREP(logo_msg);
-    LREP("\r\napplication started built time " __TIME__ " " __DATE__"\r\n\n");
+    LREP("SOLAR CHARGER APPLICATION STARTED\r\nbuilt time " __TIME__ " " __DATE__ "\r\n\n");
     shell_init(cmd_table, my_shell_init);
     
     task_init();	
 	sApp.task_shell 	= task_create(Debug_Task,	// task function 
 									  NULL, 		// parameter
 									  TRUE);		// always run
+	
 	sApp.task_control 	= task_create(Task_Control, NULL, FALSE);
 	sApp.task_gui		= task_create(Task_Gui, NULL, FALSE);
 
 	ASSERT(sApp.task_control != NULL);
 	ASSERT(sApp.task_shell != NULL);	
 	
-	LREP("firmware version 1.0.0\r\n\n");
-	LREP("initilized done !\r\n\n");
+	LREP("firmware version %s\r\n", APP_FIRMWARE_VER);
+	LREP("initilized done \r\n\n");
 	LREP("type \"help\" to show support command\r\n\n");
 	
 	LREP(SHELL_PROMPT);

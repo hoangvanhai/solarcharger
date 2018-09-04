@@ -26,6 +26,12 @@
 /**************************** Type Definitions *******************************/
 typedef void(*shell_cmd_function_t)(int32_t argc, char **argv);
 
+typedef enum SHELL_CMD_STT_ {
+	SHELL_CMD_ERR_NONE = 0,
+	SHELL_CMD_ERR_INVALID_SYNTAX,
+	SHELL_CMD_ERR_INVALID_CMD
+}SHELL_CMD_STT;
+
 typedef struct shell_command
 {
     char *name;          	/**< @brief Command name (null-terminated string). */
@@ -87,14 +93,15 @@ void 	Debug_RX_ISRHandler();
 
 void 	shell_init(const shell_command_t *const cmd_table, void (*init)(void));
 void 	shell_clear_buffer();
-void 	shell_exec(void);
+uint8_t 	shell_exec(void);
 void 	shell_help(void);
 void 	shell_set_command(const char *cmd, uint32_t size) ;
+void 	shell_push_buffer(const char *cmd, uint32_t size) ;
 
 
 /************************** Variable Definitions *****************************/
 extern uint32_t 	debug_port;
-
+extern volatile uint8_t isPwdMode;
 
 /*****************************************************************************/
 

@@ -55,47 +55,29 @@ void set_passwd(int32_t argc, char **argv);
 void get_info(int32_t argc, char **argv);
 void set_log(int32_t argc, char **argv);
 void get_setting(int32_t argc, char **argv);
+void cancel(int32_t argc, char **argv);
 
 
 /************************** Variable Definitions *****************************/
 SApp sApp;
 
-//const shell_command_t cmd_table[] =
-//{
-//	{"help", 	0u, 0u, help_cmd, 		"Display this help message", ""},
-//	{"led", 	2u, 2u, led_cmd, 		"Led control", "<on|off>"},	
-//	{"clear", 	0u, 0u, clear_screen, 	"clear screen", ""},
-//	{"restart", 0u, 0u, restart, 		"restart mcu", ""},
-//	{"duty", 	1u, 1u, set_duty_cmd, 	"set duty cycle", ""},	
-//	{"vusb", 	1u, 1u, set_vusb, 		"control 5VDC usb", "<on|off>"},
-//	{"charg", 	1u, 1u, set_charge_onoff, 		"charge control", "<on|off>"},
-//	{"bid", 	1u, 1u, set_board_id, 		"set board id", "<id>"},
-//	{"fvolt", 	1u, 1u, set_float_volt, "set float volt (mV)", "<volt>"},
-//	{"bvolt", 	1u, 1u, set_boost_volt, "set boost volt (mV)", "<volt>"},
-//	{"bcurr", 	1u, 1u, set_boost_curr, "set boost current max (mA)", "<ampe"},
-//	{"btime", 	1u, 1u, set_const_volt_time, "set boost time (hour)", "<time>"},
-//	{"pass", 	1u, 1u, set_passwd, 	"issue password confirm action", "<passwd>"},
-//	{"show", 	0u, 0u, get_info, 		"show board info", ""},
-//	{"log", 	1u, 1u, set_log, 		"continuous log board info", "<on|off>"},
-//	{0, 0u, 0u, 0, 0, 0}
-//};
-
 const shell_command_t cmd_table[] =
 {
-	{"help", 	0u, 0u, help_cmd, 		"Display this help message", ""},
-	{"reset", 	0u, 0u, restart, 		"reset system", ""},
+	{"help", 	0u, 0u, help_cmd, 		"display this help message", ""},
 	{"clear", 	0u, 0u, clear_screen, 	"clear screen", ""},
+	{"pass", 	1u, 1u, set_passwd, 	"enter password", ""},
+	{"reset", 	0u, 0u, restart, 		"reset system", ""},	
 	{"vusb", 	1u, 1u, set_vusb, 		"control 5v usb port, ex: \"vusb on\" for turn on 5v usb port", "<on|off>"},
-	{"charg", 	1u, 1u, set_charge_onoff, "control charge, ex: \"charg on\" for enable charger", "<on|off>"},
-	{"bid", 	1u, 1u, set_board_id, 	"set board id, ex: \"bid 10\" for set board id = 10", "<id>"},
-	{"fvolt", 	1u, 1u, set_float_volt, "set float volt (mV), ex: \"fvolt: 13800\" for set float volt = 13800 mV", "<volt>"},
-	{"bvolt", 	1u, 1u, set_boost_volt, "set boost volt (mV), ex: \"bvolt: 14200\" for set boost volt = 14200 mV", "<volt>"},
-	{"bcurr", 	1u, 1u, set_boost_curr, "set boost current max (mA), ex: \"bcurr 3000\" for set boost current = 3000 mA", "<ampe"},
-	{"btime", 	1u, 1u, set_const_volt_time, "set boost time (minute), ex: \"btime 120\" for set boost time = 120 minute", "<time>"},
-	{"pass", 	1u, 1u, set_passwd, 	"issue password confirm action", "<passwd>"},
+	{"charg", 	1u, 1u, set_charge_onoff, "control charger, ex: \"charg on\" for enable charger", "<on|off>"},
+	{"bid", 	1u, 1u, set_board_id, 	"set this board id, ex: \"bid 10\" for set board id = 10", "<id>"},
+	{"fvolt", 	1u, 1u, set_float_volt, "set float volt (mV), ex: \"fvolt 13800\" for set float volt = 13800 mV", "<volt>"},
+	{"bvolt", 	1u, 1u, set_boost_volt, "set boost volt (mV), ex: \"bvolt 14200\" for set boost volt = 14200 mV", "<volt>"},
+	{"bcurr", 	1u, 1u, set_boost_curr, "set boost current max (mA), ex: \"bcurr 5000\" for set boost current = 5000 mA", "<ampe>"},
+	{"btime", 	1u, 1u, set_const_volt_time, "set boost time (minute), ex: \"btime 120\" for set boost time = 120 minute", "<time>"},	
 	{"sinfo", 	0u, 0u, get_info, 		"show board info", ""},
-	{"log", 	1u, 1u, set_log, 		"continuous log board status on/off", "<on|off>"},
+	{"log", 	1u, 1u, set_log, 		"continuous log board status", "<on|off>"},
 	{"scfg", 	0u, 0u, get_setting, 	"show board setting", ""},
+	/*{"cancel", 	0u, 0u, cancel, 		"discard pending command", ""},*/	
 	{0, 0u, 0u, 0, 0, 0}
 };
 
@@ -177,11 +159,11 @@ void App_Init(SApp *pApp) {
 	pApp->panelPower = 0;
 	
 	// init control value 
-	pApp->chargConstVoltTime 	= APP_CHARGE_CONST_VOLT_TIME;
-	pApp->chargMaxCurrent 		= BATT_MAX_CURRENT_VALUE;
-	pApp->chargMaxVolt 			= BATT_VOLT_FULL_VALUE;
-	pApp->chargFloatVolt		= BATT_VOLT_FLOAT_VALUE;
-	pApp->vUsb					= TRUE;
+	pApp->chargBoostTime 			= APP_CHARGE_CONST_VOLT_TIME;
+	pApp->chargBoostCurrent 		= BATT_MAX_CURRENT_VALUE;
+	pApp->chargBoostVolt 			= BATT_VOLT_FULL_VALUE;
+	pApp->chargFloatVolt			= BATT_VOLT_FLOAT_VALUE;
+	pApp->vUsb						= TRUE;
 }
 /*****************************************************************************/
 /** @brief 
@@ -271,17 +253,17 @@ void App_Control(SApp *pApp) {
 	case BSM_BUCKER_STARTING:
 		if(pApp->eDevState == DS_DEV_RUN) {
 			// if max current is reached
-			if(sApp.battCurr >= pApp->chargMaxCurrent) {
+			if(sApp.battCurr >= pApp->chargBoostCurrent) {
 				peak = sApp.battCurr;
 				// change to const current phase
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
 				LREP("\r\nSTARTING CURRENT MAX %d -> CHANGE TO CONST CURRENT\r\n\n", (int)peak);				
 			}
 
-			if(pApp->battVolt.realValue >= pApp->chargMaxVolt) {
+			if(pApp->battVolt.realValue >= pApp->chargBoostVolt) {
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_VOLT_MAX;
 				Timer_Stop(pApp->hTimerControl);
-				Timer_StartAt(pApp->hTimerControl, pApp->chargConstVoltTime);
+				Timer_StartAt(pApp->hTimerControl, pApp->chargBoostTime);
 				LREP("\r\nSTARTING -> VOLT MAX -> START TRACK CONST VOLT TIME\r\n\n");
 			}
 			
@@ -311,7 +293,7 @@ void App_Control(SApp *pApp) {
 			if(value < 0) value = -value; 
 			if(value > 50.0) {
 				// if max current is reached
-				if(pApp->battCurr > pApp->chargMaxCurrent) {
+				if(pApp->battCurr > pApp->chargBoostCurrent) {
 					pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer < 0) pApp->currDutyPer = 0;
 					App_SetDutyPercen(pApp->currDutyPer);
@@ -324,17 +306,19 @@ void App_Control(SApp *pApp) {
 			}						
 			#endif
 			
-			if(pApp->battVolt.realValue >= pApp->chargMaxVolt) {
+			if(pApp->battVolt.realValue >= pApp->chargBoostVolt) {
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_VOLT_MAX;
-				Timer_StartAt(pApp->hTimerControl, pApp->chargConstVoltTime);
+				Timer_StartAt(pApp->hTimerControl, pApp->chargBoostTime);
 				LREP("\r\nCONST CURRENT -> VOLT MAX -> START TRACK CONST VOLT TIME\r\n\n");
 			}
 
 			// if duty is reached max 
 			if(pApp->currDutyPer >= APP_MAX_DUTY_PERCEN) {
-				//pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;
+				App_StartBucker(pApp);
+				pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;
 				LREP("\r\nCONST CURRENT DUTY MAX -> VOLT OPTMZ\r\n\n");
-			}
+			}				
+			
 		} else {			
 			App_StopBucker(pApp);
 			pApp->eBuckerSM = BSM_BUCKER_STOP;
@@ -367,10 +351,10 @@ void App_Control(SApp *pApp) {
 			}			
 			#endif
 			
-			if(pApp->battVolt.realValue >= pApp->chargMaxVolt) {
+			if(pApp->battVolt.realValue >= pApp->chargBoostVolt) {
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_VOLT_MAX;
 				Timer_Stop(pApp->hTimerControl);
-				Timer_StartAt(pApp->hTimerControl, pApp->chargConstVoltTime);
+				Timer_StartAt(pApp->hTimerControl, pApp->chargBoostTime);
 				LREP("\r\nMPPT VOLT CTRL -> VOLT MAX\r\n\n");
 			}
 			
@@ -387,13 +371,11 @@ void App_Control(SApp *pApp) {
 			float value = (pApp->battVolt.realValue - pApp->battLastVolt);
 			if(value < 0) value = -value; 
 			if(value > 10.0) {
-				//out_char('.');
-				// if max current is reached
-				if(sApp.battVolt.realValue > BATT_VOLT_FULL_VALUE) {
+				if(sApp.battVolt.realValue > pApp->chargBoostVolt) {
 					pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer < 0) pApp->currDutyPer = 0;
 					App_SetDutyPercen(pApp->currDutyPer);
-				} else if(pApp->battVolt.realValue < pApp->chargMaxVolt){
+				} else if(pApp->battVolt.realValue < pApp->chargBoostVolt){
 					pApp->currDutyPer += APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer > APP_MAX_DUTY_PERCEN) pApp->currDutyPer = APP_MAX_DUTY_PERCEN;
 					App_SetDutyPercen(pApp->currDutyPer);
@@ -401,7 +383,7 @@ void App_Control(SApp *pApp) {
 				pApp->battLastVolt = pApp->battVolt.realValue;
 			}
 			
-			if(sApp.battCurr >= pApp->chargMaxCurrent) {
+			if(sApp.battCurr >= pApp->chargBoostCurrent) {
 				// change to const current phase
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
 				LREP("\r\nCONST VOLT -> CURRENT MAX -> CHANGE TO CONST CURRENT\r\n\n");				
@@ -414,8 +396,42 @@ void App_Control(SApp *pApp) {
 		}
 		break;
 		
+	case BSM_BUCKER_CHARG_VOLT_FLOAT:
+		
+		if(pApp->eDevState == DS_DEV_RUN) {		
+		#if BUCKER_CONTROL_METHOD == CONTROL_THRESHOLD
+			float value = (pApp->battVolt.realValue - pApp->battLastVolt);
+			if(value < 0) value = -value; 
+			if(value > 10.0) {
+				if(sApp.battVolt.realValue > pApp->chargBoostVolt) {
+					pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
+					if(pApp->currDutyPer < 0) pApp->currDutyPer = 0;
+					App_SetDutyPercen(pApp->currDutyPer);
+				} else if(pApp->battVolt.realValue < pApp->chargBoostVolt){
+					pApp->currDutyPer += APP_STEP_DUTY_PERCEN;
+					if(pApp->currDutyPer > APP_MAX_DUTY_PERCEN) pApp->currDutyPer = APP_MAX_DUTY_PERCEN;
+					App_SetDutyPercen(pApp->currDutyPer);
+				}
+				pApp->battLastVolt = pApp->battVolt.realValue;
+			}
+			
+			if(sApp.battCurr >= pApp->chargBoostCurrent) {
+				// change to const current phase
+				pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
+				LREP("\r\nCONST VOLT -> CURRENT MAX -> CHANGE TO CONST CURRENT\r\n\n");				
+			}
+		#endif
+			
+		} else {			
+			App_StopBucker(pApp);
+			pApp->eBuckerSM = BSM_BUCKER_STOP;
+		}
+		break;
+		
+		break;
 	case BSM_BUCKER_IDLE:
 		break;
+	
 		
 	default:
 		break;
@@ -482,11 +498,11 @@ void set_vusb(int32_t argc, char **argv)
 		if (strcmp(argv[1], "on") == 0) {
 			sApp.eDevPendCmd = CMD_ON_OFF_VUSB;
 			sApp.cmdParam = 1;
-			LREP("password: \r\n\n");
+			isPwdMode = TRUE;
 		} else if (strcmp(argv[1], "off") == 0) {
 			sApp.eDevPendCmd = CMD_ON_OFF_VUSB;
 			sApp.cmdParam = 0;
-			LREP("password: \r\n\n");
+			isPwdMode = TRUE;
 		} else {
 			LREP("argument not supported\r\n");
 		}
@@ -504,7 +520,7 @@ void set_vusb(int32_t argc, char **argv)
 void restart(int32_t argc, char**argv) {
 	//NVIC_SystemReset();
 	sApp.eDevPendCmd = CMD_RESTART;
-	LREP("password: \r\n\n");
+	isPwdMode = TRUE;
 }
 
 /*****************************************************************************/
@@ -524,7 +540,7 @@ void help_cmd(int32_t argc, char **argv)
 }
 
 
-#define SHELL_CFG_TERMINAL_HIGH         90
+#define SHELL_CFG_TERMINAL_HIGH         120
 /*****************************************************************************/
 /** @brief 
  *		   
@@ -627,11 +643,11 @@ void set_charge_onoff(int32_t argc, char **argv) {
 		if (strcmp(argv[1], "on") == 0) {
 			sApp.eDevPendCmd = CMD_ON_OFF_CHARGE;
 			sApp.cmdParam = 1;
-			LREP("password: \r\n\n");
+			isPwdMode = TRUE;
 		} else if (strcmp(argv[1], "off") == 0) {
 			sApp.eDevPendCmd = CMD_ON_OFF_CHARGE;
 			sApp.cmdParam = 0;
-			LREP("password: \r\n\n");
+			isPwdMode = TRUE;
 		} else {
 			LREP("argument not supported\r\n\n");
 		}
@@ -649,10 +665,14 @@ void set_charge_onoff(int32_t argc, char **argv) {
 void set_board_id(int32_t argc, char **argv) {
 	if (argc == 2)
 	{		
-		float cont = atof(argv[1]);		
-		sApp.eDevPendCmd = CMD_SET_BOARD_ID;
-		sApp.cmdParam = cont;
-		LREP("password: \r\n\n");
+		float cont = atof(argv[1]);
+		if(cont >= 0) {
+			sApp.eDevPendCmd = CMD_SET_BOARD_ID;
+			sApp.cmdParam = cont;
+			isPwdMode = TRUE;
+		} else {
+			LREP("invalid value: %d, should be > 0\r\n", (int)cont);
+		}
 	}
 }
 
@@ -667,10 +687,15 @@ void set_board_id(int32_t argc, char **argv) {
 void set_float_volt(int32_t argc, char **argv) {
 	if (argc == 2)
 	{		
-		int cont = atof(argv[1]);		
-		sApp.eDevPendCmd = CMD_SET_FLOAT_VOLT;
-		sApp.cmdParam = cont;
-		LREP("password: \r\n\n");
+		float cont = atof(argv[1]);	
+		if(cont > 5000) {
+			sApp.eDevPendCmd = CMD_SET_FLOAT_VOLT;
+			sApp.cmdParam = cont;
+			isPwdMode = TRUE;
+		} else {
+			LREP("invalid value: %d, should be > 5000 && < boost volt = %d\r\n", 
+					(int)cont, (int)sApp.chargBoostVolt);
+		}
 	}
 }
 
@@ -685,10 +710,15 @@ void set_float_volt(int32_t argc, char **argv) {
 void set_boost_volt(int32_t argc, char **argv) {
 	if (argc == 2)
 	{		
-		float cont = atof(argv[1]);		
-		sApp.eDevPendCmd = CMD_SET_BOOST_VOLT;
-		sApp.cmdParam = cont;
-		LREP("password: \r\n\n");
+		float cont = atof(argv[1]);
+		if(cont > sApp.chargFloatVolt) {
+			sApp.eDevPendCmd = CMD_SET_BOOST_VOLT;
+			sApp.cmdParam = cont;
+			isPwdMode = TRUE;
+		} else {
+			LREP("invalid value: %d, should be > float volt = %d\r\n", 
+					(int)cont, (int)sApp.chargFloatVolt);
+		}
 	}
 }
 
@@ -703,10 +733,14 @@ void set_boost_volt(int32_t argc, char **argv) {
 void set_boost_curr(int32_t argc, char **argv) {
 	if (argc == 2)
 	{		
-		float cont = atof(argv[1]);		
-		sApp.eDevPendCmd = CMD_SET_CURR_MAX;
-		sApp.cmdParam = cont;
-		LREP("password: \r\n\n");
+		float cont = atof(argv[1]);
+		if(cont > 300) {
+			sApp.eDevPendCmd = CMD_SET_CURR_MAX;
+			sApp.cmdParam = cont;
+			isPwdMode = TRUE;
+		} else {
+			LREP("invalid value: %d, should be > 300\r\n", (int)cont);
+		}
 	}	
 }
 
@@ -721,10 +755,14 @@ void set_boost_curr(int32_t argc, char **argv) {
 void set_const_volt_time(int32_t argc, char **argv) {
 	if (argc == 2)
 	{		
-		float cont = atof(argv[1]);		
-		sApp.eDevPendCmd = CMD_SET_BOOST_TIME;
-		sApp.cmdParam = cont;
-		LREP("password: \r\n\n");
+		float cont = atof(argv[1]);
+		if(cont > 1) {
+			sApp.eDevPendCmd = CMD_SET_BOOST_TIME;
+			sApp.cmdParam = cont;
+			isPwdMode = TRUE;
+		} else {
+			LREP("invalid value: %d, should be > 1\r\n", (int)cont);
+		}
 	}
 }
 
@@ -742,11 +780,11 @@ void set_log(int32_t argc, char **argv) {
 		if (strcmp(argv[1], "on") == 0) {
 			sApp.eDevPendCmd = CMD_SET_LOG_STT;
 			sApp.cmdParam = 1;
-			LREP("password: \r\n\n");
+			isPwdMode = TRUE;
 		} else if (strcmp(argv[1], "off") == 0) {
 			sApp.eDevPendCmd = CMD_SET_LOG_STT;
 			sApp.cmdParam = 0;
-			LREP("password: \r\n\n");
+			isPwdMode = TRUE;
 		} else {
 			LREP("argument not supported\r\n\n");
 		}
@@ -755,19 +793,27 @@ void set_log(int32_t argc, char **argv) {
 
 void get_setting(int32_t argc, char **argv) {
 	
-	char *stt = (sApp.eBuckerSM & DS_USER_DISABLE) == 0 ? "on" : "off";
+	char *stt = (sApp.eDevState & DS_USER_DISABLE) == 0 ? "on" : "off";
 	char *usb = sApp.vUsb == 0 ? "off" : "on";
 	
 	LREP("show config:\r\n bid: %d\r\n charg: %s\r\n bvolt: %d mV\r\n btime: %d min\r\n fvolt: %d mV\r\n bcurr: %d mA\r\n vusb: %s\r\n\n",			
 			(int)sApp.id,
 			stt,
-			(int)sApp.chargMaxVolt,
-			(int)(sApp.chargConstVoltTime / MILLI_SEC_ON_MINUTE),
+			(int)sApp.chargBoostVolt,
+			(int)(sApp.chargBoostTime / MILLI_SEC_ON_MINUTE),
 			(int)sApp.chargFloatVolt,
-			(int)sApp.chargMaxCurrent,
+			(int)sApp.chargBoostCurrent,
 			usb);
 			
 }
+
+void cancel(int32_t argc, char **argv) {
+	
+	isPwdMode = FALSE;
+	sApp.eDevPendCmd = CMD_NONE;
+	LREP("discard pending command\r\n");
+}
+
 /*****************************************************************************/
 /** @brief 
  *		   
@@ -777,6 +823,7 @@ void get_setting(int32_t argc, char **argv) {
  *  @note
  */
 void set_passwd(int32_t argc, char **argv) {
+	static uint8_t enter_cnt = 0;
 	if (argc == 2)
 	{
 		LREP("\r\n");
@@ -784,41 +831,43 @@ void set_passwd(int32_t argc, char **argv) {
 			
 			switch(sApp.eDevPendCmd) {
 			case CMD_ON_OFF_CHARGE:
-				if(sApp.cmdParam == 0) {
+				if(sApp.cmdParam == 1) {
+					App_ClearDevState(&sApp, DS_USER_DISABLE);
+					LREP("user enabled charger\r\n\n");					
+				} else {
 					App_SetDevState(&sApp, DS_USER_DISABLE);
 					LREP("user disabled charger\r\n\n");
-				} else {
-					App_ClearDevState(&sApp, DS_USER_DISABLE);
-					LREP("user enabled charger\r\n\n");
 				}
 				break;
 			case CMD_ON_OFF_VUSB:
 				if(sApp.cmdParam == 1) {
 					GPIO_SET_HIGH_CTRL_VUSB_EN();
 					LREP("user control on vusb\r\n\n");
+					sApp.vUsb = TRUE;
 				} else {
 					GPIO_SET_LOW_CTRL_VUSB_EN();
 					LREP("user control off vusb\r\n\n");
+					sApp.vUsb = FALSE;
 				}
 				break;
 			case CMD_SET_BOARD_ID:
 				sApp.id = (int)sApp.cmdParam;
 				LREP("user set board id = %d\r\n\n", sApp.id);
 				break;
-			case CMD_SET_FLOAT_VOLT:
-				sApp.floatBattVolt = sApp.cmdParam;
-				LREP("user set float battery voltage: %d\r\n\n", (int)sApp.floatBattVolt);
+			case CMD_SET_FLOAT_VOLT:				
+				sApp.chargFloatVolt = sApp.cmdParam;
+				LREP("user set float battery voltage: %d\r\n\n", (int)sApp.chargFloatVolt);
 				break;
 			case CMD_SET_BOOST_VOLT:
-				sApp.chargMaxVolt = sApp.cmdParam;
-				LREP("user set boost battery voltage: %d\r\n\n", (int)sApp.chargMaxVolt);
+				sApp.chargBoostVolt = sApp.cmdParam;
+				LREP("user set boost battery voltage: %d\r\n\n", (int)sApp.chargBoostVolt);
 				break;
 			case CMD_SET_CURR_MAX:
-				sApp.chargMaxCurrent = sApp.cmdParam;
-				LREP("user set boost battery current: %d\r\n\n", (int)sApp.chargMaxCurrent);
+				sApp.chargBoostCurrent = sApp.cmdParam;
+				LREP("user set boost battery current: %d\r\n\n", (int)sApp.chargBoostCurrent);
 				break;
 			case CMD_SET_BOOST_TIME:
-				sApp.chargConstVoltTime = (uint32_t)(sApp.cmdParam * (float)MILLI_SEC_ON_MINUTE);
+				sApp.chargBoostTime = (uint32_t)(sApp.cmdParam * (float)MILLI_SEC_ON_MINUTE);
 				LREP("user set boost time: %d minute\r\n\n", (int)(sApp.cmdParam));				
 				break;
 			case CMD_SET_LOG_STT:
@@ -838,9 +887,15 @@ void set_passwd(int32_t argc, char **argv) {
 			}
 			
 			sApp.eDevPendCmd = CMD_NONE;
-			
+			isPwdMode = FALSE;
+			enter_cnt = 0;
 		} else {
 			LREP("invalid password\r\n\n");
+			if(enter_cnt++ > 2) {
+				enter_cnt = 0;
+				isPwdMode = FALSE;
+				sApp.eDevPendCmd = CMD_NONE;
+			}
 		}
 	}
 }
@@ -870,13 +925,10 @@ void Clb_TimerControl(uint32_t tick, void *param) {
 		sApp.eBuckerSM = BSM_BUCKER_STOP;
 	}
 	
-	if(sApp.eBuckerSM == BSM_BUCKER_CHARG_CONST_CURR) {
-		LED_SetBlink(PIN_DISP_BATT_FULL_IDX, 1);
-		App_SetDevState(&sApp, DS_BATT_VOLT_FULL);
-	} else if(sApp.eBuckerSM == BSM_BUCKER_CHARG_VOLT_MAX) {
-		LED_SetBlink(PIN_DISP_BATT_FULL_IDX, 0);
+	
+	if(sApp.eBuckerSM == BSM_BUCKER_CHARG_VOLT_MAX) {
 		GPIO_SET_HIGH_DISP_BATT_FULL();
-		App_SetDevState(&sApp, DS_BATT_VOLT_FULL);
+		sApp.eBuckerSM = BSM_BUCKER_CHARG_VOLT_FLOAT;
 	}
 	
 	Timer_Stop(sApp.hTimerControl);

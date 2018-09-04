@@ -8,7 +8,8 @@
 #ifndef APP_CFG_H_
 #define APP_CFG_H_
 
-#define		APP_SETTING_PASSWD				("1234")
+#define 	APP_FIRMWARE_VER				("1.0.0")
+#define		APP_SETTING_PASSWD				("load")
 #define		APP_DEVICE_ID					(1)
 
 #define 	DEBUG
@@ -17,8 +18,7 @@
 #define		MILLI_SEC_ON_HOUR				(7200000)
 #define 	MILLI_SEC_ON_MINUTE				(120000)
 
-#define		APP_CHARGE_CONST_VOLT_TIME		(120 * MILLI_SEC_ON_MINUTE)	// const volt on 3 hours
-//#define		APP_CHARGE_CONST_CURR_TIME		(2 * MILLI_SEC_ON_MINUTE)	// Second
+#define		APP_CHARGE_CONST_VOLT_TIME		(120 * MILLI_SEC_ON_MINUTE)	// const volt on 120 minute
 
 #define 	APP_TIMER_FREQ					(1000)	//Hz
 #define 	ADC_READ_FREQ					(1000)	//Hz
