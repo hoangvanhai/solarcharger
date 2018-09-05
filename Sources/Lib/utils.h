@@ -66,11 +66,6 @@
 //}TriState;
 
 
-//#define COMPARE_VALUE(point, value, threshold) { \
-//	if((threshold) < (value) && (value) < (threashold + delta)) { \
-//		
-
-
 
 /************************** Function Prototypes ******************************/
 extern uint16_t RoundFloatToUint16(float f_x);

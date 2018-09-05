@@ -236,6 +236,11 @@ typedef struct SApp_ {
 												(pApp)->sSPInfo.currPower = 0; \
 											}
 
+#define App_ResetControl(pApp)				{ \
+												(pApp)->eBuckerSM = BSM_BUCKER_STOP; \
+												Timer_Stop((pApp)->hTimerControl); \
+												App_StopBucker(pApp); \
+											}
 
 /*
 #define App_PidProcess(pApp, measVoltage) { 						\

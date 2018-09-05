@@ -20,6 +20,8 @@
 
 #define		APP_CHARGE_CONST_VOLT_TIME		(120 * MILLI_SEC_ON_MINUTE)	// const volt on 120 minute
 
+#define		APP_CONTROL_OFFSET_VALUE		(50.0)
+
 #define 	APP_TIMER_FREQ					(1000)	//Hz
 #define 	ADC_READ_FREQ					(1000)	//Hz
 

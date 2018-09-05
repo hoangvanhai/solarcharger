@@ -119,7 +119,7 @@ int main (void)
         	sApp.battCurr = 0;        	
         }
         
-        if(sApp.battCurr < 100 && sApp.eBuckerSM > BSM_BUCKER_STARTING) {
+        if(sApp.battCurr < 50 && sApp.eBuckerSM > BSM_BUCKER_STARTING) {
         	if(sApp.eBuckerSM != BSM_BUCKER_IDLE) {
         		LREP("Detect lost current start timer\r\n\n");
 				sApp.eBuckerSM = BSM_BUCKER_IDLE;
@@ -127,6 +127,7 @@ int main (void)
 				Timer_StartAt(sApp.hTimerControl, 5000);
         	}
         }
+              
     	task_main_exec();
     }
 }

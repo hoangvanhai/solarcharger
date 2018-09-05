@@ -113,7 +113,7 @@ if (v.mppt_enable==1)													\
 {																		\
 	if (v.mppt_first == 1)												\
 	{																	\
-		v.VmppOut= v.Vpv - (50);										\
+		v.VmppOut= 16500;												\
 		v.mppt_first=0;													\
 		v.PanelPower_Prev=v.PanelPower;									\
 	}																	\
