@@ -125,8 +125,7 @@ typedef struct SApp_ {
 	
 	EDevCmd			eDevPendCmd;
 	float			cmdParam;
-	
-	
+	int16_t			downRate;	
 	
 }SApp;
 

@@ -55,8 +55,8 @@
 
 #define 	MPPT_POWER_DELTA_MIN			(50)
 #define 	MPPT_VOLT_STEP_SIZE				(10)
-#define 	MPPT_VOLT_OUT_MAX				(20000)
-#define		MPPT_VOLT_OUT_MIN				(13000)
+#define 	MPPT_VOLT_OUT_MAX				(18000)
+#define		MPPT_VOLT_OUT_MIN				(15500)
 
 #define 	PID_UPDATE_FREQ					(2000)
 #define		BUCKER_Kp						(0.01)

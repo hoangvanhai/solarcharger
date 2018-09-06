@@ -167,6 +167,7 @@ void App_Init(SApp *pApp) {
 	pApp->chargBoostVolt 			= BATT_BOOST_VOLT_VALUE;
 	pApp->chargFloatVolt			= BATT_FLOAT_VOLT_VALUE;
 	pApp->vUsb						= TRUE;
+	pApp->downRate					= 100;
 	Timer_Start(pApp->hTimerGui);
 #if APP_PROCESS_METHOD == APP_PROCESS_IN_BGND
 	Timer_Start(pApp->hTimerUpdate);
@@ -250,8 +251,8 @@ void App_Control(SApp *pApp) {
 	case BSM_BUCKER_STOP:
 		if(pApp->eDevState == DS_DEV_RUN) {
 			App_StartBucker(pApp);			
-			pApp->eBuckerSM = BSM_BUCKER_STARTING;
-			//pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;				
+			//pApp->eBuckerSM = BSM_BUCKER_STARTING;
+			pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;				
 			LREP("\r\nSTART BUCKER MPPT\r\n\n");
 		}
 		
@@ -284,12 +285,12 @@ void App_Control(SApp *pApp) {
 						(int)(pApp->currDutyPer * 1000), 
 						(int)pApp->battVolt.realValue, 
 						(int)pApp->battCurr);
-				//App_StartBucker(pApp);
+				App_StartBucker(pApp);
 			}			
 		} else if(pApp->eDevState == (DS_DEV_RUN | DS_PANEL_VOLT_LOW)) {
-			//App_StartBucker(pApp);
+			App_StartBucker(pApp);
 			pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;			
-			LREP("SL D MAX -> MPPT\r\n\n");
+			LREP("SLD->MPPT");
 		} else {			
 			App_StopBucker(pApp);
 			pApp->eBuckerSM = BSM_BUCKER_STOP;
@@ -308,12 +309,10 @@ void App_Control(SApp *pApp) {
 					pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer < 0) pApp->currDutyPer = 0;
 					App_SetDutyPercen(pApp->currDutyPer);
-					//out_char('<');
 				} else if(sApp.battCurr < pApp->chargBoostCurrent){
 					pApp->currDutyPer += APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer > APP_MAX_DUTY_PERCEN) pApp->currDutyPer = APP_MAX_DUTY_PERCEN;
 					App_SetDutyPercen(pApp->currDutyPer);
-					//out_char('>');
 				}
 				pApp->battLastCurr = pApp->battCurr;
 			}						
@@ -322,20 +321,20 @@ void App_Control(SApp *pApp) {
 			if(pApp->battVolt.realValue >= pApp->chargBoostVolt) {
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_VOLT_MAX;
 				Timer_StartAt(pApp->hTimerControl, pApp->chargBoostTime);
-				LREP("C I -> C V %d ", (int)pApp->chargBoostTime);
+				LREP("I ->V ");
 			}
 
 			// if duty is reached max 
 			if(pApp->currDutyPer >= APP_MAX_DUTY_PERCEN) {
-				//App_StartBucker(pApp);
+				App_StartBucker(pApp);
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;
-				LREP("CONST I -> MPPT\r\n\n");
+				LREP("DI->MPPT ");
 			}				
 			
 		} else if(pApp->eDevState == (DS_DEV_RUN | DS_PANEL_VOLT_LOW)) {
-			//App_StartBucker(pApp);
+			App_StartBucker(pApp);
 			pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;			
-			LREP("CONST I -> MPPT\r\n\n");
+			LREP("LI->MPPT ");
 		} else {					
 			App_StopBucker(pApp);
 			pApp->eBuckerSM = BSM_BUCKER_STOP;
@@ -343,49 +342,49 @@ void App_Control(SApp *pApp) {
 		break;
 		
 	case BSM_BUCKER_CHARG_MPPT_VOLT_CTRL:
-		if(pApp->eDevState == DS_DEV_RUN) {			
-			pApp->sMppt.Ipv = pApp->panelCurr.realValue;
-			pApp->sMppt.Vpv = pApp->panelVolt.realValue;				
-			MPPT_PNO_F_MACRO(pApp->sMppt);
-			
-			#if BUCKER_CONTROL_METHOD == CONTROL_THRESHOLD
-			diffval = (pApp->panelVolt.realValue - pApp->sMppt.VmppOut);			
-			if(ABS(diffval) > 10.0) 
-			{
-				// if max current is reached
-				if(sApp.panelVolt.realValue > pApp->sMppt.VmppOut) {
-					pApp->currDutyPer += APP_STEP_DUTY_PERCEN;
-					if(pApp->currDutyPer > APP_MAX_DUTY_PERCEN) pApp->currDutyPer = APP_MAX_DUTY_PERCEN;
-					App_SetDutyPercen(pApp->currDutyPer);
-					//out_char('>');
-				} else if(sApp.panelVolt.realValue < pApp->sMppt.VmppOut){
-					pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
-					if(pApp->currDutyPer < APP_MIN_DUTY_PERCEN) pApp->currDutyPer = APP_MIN_DUTY_PERCEN;
-					App_SetDutyPercen(pApp->currDutyPer);
-					//out_char('<');
+		{
+	//		if(pApp->eDevState == DS_DEV_RUN || 
+	//				pApp->eDevState == (DS_DEV_RUN | DS_PANEL_VOLT_LOW)) {		
+				if(pApp->eDevState == DS_DEV_RUN) {
+				pApp->sMppt.Ipv = pApp->panelCurr.realValue;
+				pApp->sMppt.Vpv = pApp->panelVolt.realValue;				
+				MPPT_PNO_F_MACRO(pApp->sMppt);
+				
+				#if BUCKER_CONTROL_METHOD == CONTROL_THRESHOLD
+				diffval = (pApp->panelVolt.realValue - pApp->sMppt.VmppOut);			
+				if(ABS(diffval) > 10.0) 
+				{
+					// if max current is reached
+					if(sApp.panelVolt.realValue > pApp->sMppt.VmppOut) {
+						pApp->currDutyPer += APP_STEP_DUTY_PERCEN;
+						if(pApp->currDutyPer > APP_MAX_DUTY_PERCEN) pApp->currDutyPer = APP_MAX_DUTY_PERCEN;
+						App_SetDutyPercen(pApp->currDutyPer);
+					} else if(sApp.panelVolt.realValue < pApp->sMppt.VmppOut){
+						pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
+						if(pApp->currDutyPer < APP_MIN_DUTY_PERCEN) pApp->currDutyPer = APP_MIN_DUTY_PERCEN;
+						App_SetDutyPercen(pApp->currDutyPer);
+					}
+				}			
+				#endif
+				
+				if(pApp->battVolt.realValue >= pApp->chargBoostVolt) {
+					pApp->eBuckerSM = BSM_BUCKER_CHARG_VOLT_MAX;
+					Timer_Stop(pApp->hTimerControl);
+					Timer_StartAt(pApp->hTimerControl, pApp->chargBoostTime);
+					LREP("MPPT->V ");
 				}
-			}			
-			#endif
-			
-			if(pApp->battVolt.realValue >= pApp->chargBoostVolt) {
-				pApp->eBuckerSM = BSM_BUCKER_CHARG_VOLT_MAX;
-				Timer_Stop(pApp->hTimerControl);
-				Timer_StartAt(pApp->hTimerControl, pApp->chargBoostTime);
-				LREP("MPPT -> CONST %dV\r\n\n", pApp->chargBoostTime);
+				
+				if(sApp.battCurr >= pApp->chargBoostCurrent) {
+					// change to const current phase
+					pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
+					LREP("MPPT->I ");				
+				}
+				
+			} else {			
+				App_StopBucker(pApp);
+				pApp->eBuckerSM = BSM_BUCKER_STOP;
 			}
-			
-			if(sApp.battCurr >= pApp->chargBoostCurrent) {
-				// change to const current phase
-				pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
-				LREP("MPPT -> CONST I\r\n\n");				
-			}
-			
-		} else {			
-			App_StopBucker(pApp);
-			LREP("status = 0x%x\r\n\n", pApp->eDevState);
-			pApp->eBuckerSM = BSM_BUCKER_STOP;
 		}
-		
 		break;		
 		
 	case BSM_BUCKER_CHARG_VOLT_MAX:
@@ -397,20 +396,16 @@ void App_Control(SApp *pApp) {
 					pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer < 0) pApp->currDutyPer = 0;
 					App_SetDutyPercen(pApp->currDutyPer);
-					putch('<');
 				} else if(pApp->battVolt.realValue < pApp->chargBoostVolt){
 					pApp->currDutyPer += APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer > APP_MAX_DUTY_PERCEN) pApp->currDutyPer = APP_MAX_DUTY_PERCEN;
 					App_SetDutyPercen(pApp->currDutyPer);
-					putch('>');
-				}
-				//pApp->battLastVolt = pApp->battVolt.realValue;
+				}				
 			}
 			
 			if(sApp.battCurr >= pApp->chargBoostCurrent) {
-				// change to const current phase
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
-				LREP("C V -> C I ");				
+				LREP("V->I ");				
 			}
 		#endif
 			
@@ -430,20 +425,18 @@ void App_Control(SApp *pApp) {
 					pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer < 0) pApp->currDutyPer = 0;
 					App_SetDutyPercen(pApp->currDutyPer);
-					putch('<');
 				} else if(pApp->battVolt.realValue < pApp->chargFloatVolt){
 					pApp->currDutyPer += APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer > APP_MAX_DUTY_PERCEN) pApp->currDutyPer = APP_MAX_DUTY_PERCEN;
 					App_SetDutyPercen(pApp->currDutyPer);
-					putch('>');
 				}				
 				//pApp->battLastVolt = pApp->battVolt.realValue;
 			}
 			
 			if(sApp.battCurr >= pApp->chargBoostCurrent) {
 				// change to const current phase
-				//pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
-				LREP("CONST FV -> CONST I %d\r\n", (int)pApp->battCurr);					
+				pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
+				LREP("FV->I ");					
 			}
 		#endif
 			
@@ -1043,6 +1036,15 @@ void PIT0_HandleInt(void) {
     } else {
     	sApp.battCurr = 0;        	
     }    
+//	if(sApp.battCurr < BATT_DETECT_REM_CURR_VAL &&
+//			sApp.eBuckerSM > BSM_BUCKER_STARTING) {
+//		if(sApp.eBuckerSM != BSM_BUCKER_IDLE) {
+//			LREP("Detect lost current start timer\r\n\n");
+//			sApp.eBuckerSM = BSM_BUCKER_IDLE;
+//			App_StopBucker(&sApp);
+//			Timer_StartAt(sApp.hTimerControl, BATT_DETECT_REM_WAIT_TIME);
+//		}
+//	}
 	App_Control(&sApp);
 #endif
 	    
