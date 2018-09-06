@@ -36,7 +36,7 @@
 #define		BATT_DETECT_REM_CURR_VAL		(50)
 #define		BATT_DETECT_REM_WAIT_TIME		(5000)	
 
-#define		BATT_BOOST_CURRENT_VALUE		(5000) 	// Ampe
+#define		BATT_BOOST_CURRENT_VALUE		(2000) 	// Ampe
 #define 	BATT_MIN_CURRENT_VALUE			(500)
 
 

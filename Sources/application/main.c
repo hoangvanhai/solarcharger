@@ -80,8 +80,7 @@ int main(void) {
 	BSP_Init();
 	App_Init(&sApp);
 	LREP(logo_msg);
-	LREP(
-			"SOLAR CHARGER APPLICATION STARTED\r\nbuilt time " __TIME__ " " __DATE__ "\r\n\n");
+	LREP("SOLAR CHARGER APPLICATION STARTED\r\nbuilt time " __TIME__ " " __DATE__ "\r\n\n");
 	shell_init(cmd_table, my_shell_init);
 
 	task_init();
