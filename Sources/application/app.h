@@ -101,8 +101,10 @@ typedef struct SApp_ {
 	SAdcValue		battVolt;
 	float			battLastVolt;
 	float			battCurr;
-	float			battLastCurr;	
-	
+	float			battLastCurr;
+	uint16_t 		pvAdcValue;
+	uint16_t 		piAdcValue;
+	uint16_t 		bvAdcValue;	
 	
 	// control
 	void 			*hTimerControl;
@@ -144,26 +146,26 @@ typedef struct SApp_ {
                                                 }                                               \
                                             }
 
-#define Adc_CalcRealValueIsr(adc, value)       { \
-                                            if(adc.type == 0) { \
-                                                if(value <= adc.offset) adc.sEMA.In = 0; \
-                                                else adc.sEMA.In = (float)(value - adc.offset); \
-                                                MATH_EMAVG_IQ_C(adc.sEMA); \
-                                                adc.realValue = adc.coeff * adc.sEMA.Out; \
-                                            } else { \
-                                                adc.count++; \
-                                                adc.currValue = value;  \
-                                                adc.totalValue += value; \
-                                                if(adc.count >= adc.maxCount) \
-                                                { \
-                                                    adc.avgValue = (adc.totalValue / adc.maxCount) \
-                                                    if(adc.avgValue <  adc.offset) adc.avgValue = 0; \
-                                                    else adc.avgValue -= adc.offset; \
-                                                    adc.realValue = adc.avgValue * adc.coeff; \
-                                                    adc.count = 0; \
-                                                    adc.totalValue = 0;\
-                                                } \
-                                            } \
+#define Adc_CalcRealValueIsr(adc, value)    { 													\
+                                            if(adc.type == 0) { 								\
+                                                if(value < adc.offset) adc.sEMA.In = 0; 		\
+                                                else adc.sEMA.In = (uint16_t)(value - adc.offset); \
+                                                MATH_EMAVG_IQ_C(adc.sEMA); 						\
+                                                adc.realValue = adc.coeff * adc.sEMA.Out; 		\
+                                            } else { 											\
+                                                adc.count++; 									\
+                                                adc.currValue = value;  						\
+                                                adc.totalValue += value; 						\
+                                                if(adc.count >= adc.maxCount) 					\
+                                                { 												\
+                                                    adc.avgValue = (adc.totalValue / adc.maxCount); \
+                                                    if(adc.avgValue <= adc.offset) adc.avgValue = 0; \
+                                                    else adc.avgValue -= adc.offset; 			\
+                                                    adc.realValue = adc.avgValue * adc.coeff; 	\
+                                                    adc.count = 0; 								\
+                                                    adc.totalValue = 0;							\
+                                                } 												\
+                                            } 													\
                                             }
 
 
@@ -240,6 +242,10 @@ typedef struct SApp_ {
 												(pApp)->eBuckerSM = BSM_BUCKER_STOP; \
 												Timer_Stop((pApp)->hTimerControl); \
 												App_StopBucker(pApp); \
+											}
+
+#define putch(ch)							{\
+												UART1->D = (ch); \
 											}
 
 /*

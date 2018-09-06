@@ -1,9 +1,25 @@
-/*
- * bsp.c
+/** @FILE NAME:    bsp.c
+ *  @DESCRIPTION:  This file board support package, solar charger project
  *
- *  Created on: Aug 22, 2018
- *      Author: MSI
- */
+ *  Copyright (c) 2018 EES Ltd.
+ *  All Rights Reserved This program is the confidential and proprietary
+ *  product of EES Ltd. Any Unauthorized use, reproduction or transfer
+ *  of this program is strictly prohibited.
+ *
+ *  @Author: HaiHoang
+ *  @NOTE:   No Note at the moment
+ *  @BUG:    No known bugs.
+ *
+ *<pre>
+ *  MODIFICATION HISTORY:
+ *
+ *  Ver   Who       Date                Changes
+ *  ----- --------- ------------------  ----------------------------------------
+ *  1.00  HaiHoang  August 1, 2018      First release
+ *
+ *
+ *</pre>
+******************************************************************************/
 
 #include <bsp.h>
 #include <console.h>
@@ -29,7 +45,14 @@ uint32_t		GPIO_Pin[] = {
 		GPIO_PIN_MAX,
 };
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_Init() {
 	//DisableInterrupts;
 	sysinit();
@@ -41,7 +64,14 @@ void BSP_Init() {
 	BSP_InitGpio();
 	//EnableInterrupts;
 }
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_InitAdc() {
 	ADC_ConfigType  sADC_Config = {{0},0};
     /* initiaze ADC module */	
@@ -54,7 +84,14 @@ void BSP_InitAdc() {
     ADC_Init( ADC, &sADC_Config);    
 }
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_InitPIT0(uint32_t freq) {
     PIT_ConfigType  sPITConfig0;    
     
@@ -71,7 +108,14 @@ void BSP_InitPIT0(uint32_t freq) {
     NVIC_EnableIRQ(PIT_CH0_IRQn);
 }
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_InitPIT1(uint32_t freq) {
     PIT_ConfigType  sPITConfig1;    
     
@@ -88,7 +132,14 @@ void BSP_InitPIT1(uint32_t freq) {
     NVIC_EnableIRQ(PIT_CH1_IRQn);
 }
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_InitUart(uint32_t bitrate) {
 	UART_ConfigType sConfig;
 	SIM_RemapUART1ToPTF_2_3();
@@ -102,7 +153,14 @@ void BSP_InitUart(uint32_t bitrate) {
     NVIC_EnableIRQ(UART1_IRQn);
 }
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_InitPwm() {
 
 //    SIM->PINSEL |= SIM_PINSEL_FTM0PS0_MASK;
@@ -127,7 +185,14 @@ void BSP_InitPwm() {
 
 
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_InitGpio() {
 	GPIO_PinInit(PIN_DISP_BATT_EMPTY, 		GPIO_PinOutput);
 	GPIO_PinInit(PIN_DISP_BATT_LOW, 		GPIO_PinOutput);
@@ -156,80 +221,14 @@ void BSP_InitGpio() {
 	LED_InitAll();
 }
 
-void UART_HandleInt(UART_Type *pUART) {
-	
-	uint8_t u8Port;
-	(void)u8Port;
-    volatile uint8_t read_temp = 0;
-    
-    u8Port = ((uint32_t)pUART-(uint32_t)UART0)>>12;
-    
-    /* check overrun flag */
-    if(UART_CheckFlag(pUART,UART_FlagOR)) {
-        read_temp = UART_ReadDataReg(pUART);     
-    } else if(UART_CheckFlag(pUART, UART_FlagRDRF)) {
-    	read_temp = UART_ReadDataReg(pUART);
-    	PushCommand(read_temp);    	
-    }
-}
-
-void PIT0_HandleInt(void) {	
-	sSysTick.u32SystemTickCount++;
-	Timer_Update();
-    ADC_SetChannel(ADC,ADC_CHANNEL_AD8);
-    ADC_SetChannel(ADC,ADC_CHANNEL_AD10);
-    ADC_SetChannel(ADC,ADC_CHANNEL_AD11);
-    
-#if BUCKER_CONTROL_METHOD == CONTROL_PID
-    
-    switch(sApp.eBuckerSM) {
-    case BSM_BUCKER_CHARG_CONST_CURR:
-    	PID_ProcessM(&sApp.sPid, 			
-    				BATT_MAX_CURRENT_VALUE, 		// set point
-					sApp.battCurr);			  		// feedback
-    	sApp.currDutyPer = sApp.sPid.PIDOut;
-    	if(sApp.currDutyPer > APP_MAX_DUTY_PERCEN) sApp.currDutyPer = APP_MAX_DUTY_PERCEN;
-    	if(sApp.currDutyPer < APP_MIN_DUTY_PERCEN) sApp.currDutyPer = APP_MIN_DUTY_PERCEN;
-    	App_SetDutyPercen(sApp.currDutyPer);
-    	break;
-    case BSM_BUCKER_CHARG_MPPT_VOLT_CTRL:
-    	PID_ProcessM(&sApp.sPid, 
-    					sApp.sMppt.VmppOut, 		// set point
-    					sApp.panelVolt.realValue);  // feedback	
-		sApp.currDutyPer = sApp.sPid.PIDOut;		
-		if(sApp.currDutyPer > APP_MAX_DUTY_PERCEN) sApp.currDutyPer = APP_MAX_DUTY_PERCEN;
-		if(sApp.currDutyPer < APP_MIN_DUTY_PERCEN) sApp.currDutyPer = APP_MIN_DUTY_PERCEN;
-		App_SetDutyPercen(1 - sApp.currDutyPer);		
-    	break;
-    	
-    case BSM_BUCKER_CHARG_VOLT_MAX:
-    	PID_ProcessM(&sApp.sPid, 
-    				BATT_VOLT_FULL_VALUE, 			// set point
-					sApp.battVolt.realValue);		// feedback
-    	sApp.currDutyPer = sApp.sPid.PIDOut;
-    	if(sApp.currDutyPer > APP_MAX_DUTY_PERCEN) sApp.currDutyPer = APP_MAX_DUTY_PERCEN;
-    	if(sApp.currDutyPer < APP_MIN_DUTY_PERCEN) sApp.currDutyPer = APP_MIN_DUTY_PERCEN;
-    	App_SetDutyPercen(sApp.currDutyPer);
-    	break;
-    	
-    default:
-    	break;
-    }
-          
-#elif 	BUCKER_CONTROL_METHOD == CONTROL_THRESHOLD
-//    if(sApp.eBuckerSM == BSM_BUCKER_CHARG_MPPT_VOLT_CTRL) {
-//    	sApp.sMppt.Ipv = sApp.panelCurr.realValue;
-//    	sApp.sMppt.Vpv = sApp.panelVolt.realValue;				
-//    	MPPT_PNO_F_MACRO(sApp.sMppt);
-//    }
-#endif
-    
-    
-    
-    LED_ActAll();
-}
-
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void PIT1_HandleInt(void) {
     ADC_SetChannel(ADC,ADC_CHANNEL_AD8);
     ADC_SetChannel(ADC,ADC_CHANNEL_AD10);
@@ -238,7 +237,14 @@ void PIT1_HandleInt(void) {
 
 
 uint16_t u16ChV_old, u16ChV_new;
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void FTM2_HandleInt(void) {
 
     /* clear the flag */
@@ -246,7 +252,14 @@ void FTM2_HandleInt(void) {
 }
 
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void FTM0_HandleInt(void)
 {    
     /* clear the flag */
@@ -254,37 +267,63 @@ void FTM0_HandleInt(void)
 }
 
 
-void ADC_HandleInt(void) {
-    //while(!ADC_IsFIFOEmptyFlag(ADC)) // should not use while in ISR, can be cause 
-									   // program hanged
-    {       
-    	Adc_PushAdcValue(sApp.panelVolt, 	ADC_ReadResultReg(ADC));
-    	Adc_PushAdcValue(sApp.panelCurr, 	ADC_ReadResultReg(ADC));
-    	Adc_PushAdcValue(sApp.battVolt, 	ADC_ReadResultReg(ADC));
-    }
-}
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_InitGpioPin(uint32_t pin) {
 	GPIO_PinInit(GPIO_Pin[pin], 		GPIO_PinOutput);
 }
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_SetHighGpioPin(uint32_t pin) {
 	GPIO_PinSet(GPIO_Pin[pin]);
 }
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_SetLowGpioPin(uint32_t pin) {
 	GPIO_PinClear(GPIO_Pin[pin]);
 }
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_ToggleGpioPin(uint32_t pin) {
 	GPIO_PinToggle(GPIO_Pin[pin]);
 }
 
-
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
 void BSP_SetGpioPin(uint32_t pin, uint8_t lev) {
 	if(lev) {
 		GPIO_PinSet(GPIO_Pin[pin]);

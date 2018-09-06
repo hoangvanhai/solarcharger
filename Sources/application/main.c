@@ -19,7 +19,7 @@
  *
  *
  *</pre>
-******************************************************************************/
+ ******************************************************************************/
 /***************************** Include Files *********************************/
 #include <bsp.h>
 #include <dispatcher.h>
@@ -27,25 +27,25 @@
 #include <app.h>
 
 /******************************************************************************
-* Global variables
-******************************************************************************/
+ * Global variables
+ ******************************************************************************/
 
 /******************************************************************************
-* Constants and macros
-******************************************************************************/
+ * Constants and macros
+ ******************************************************************************/
 
 /******************************************************************************
-* Local types
-******************************************************************************/
+ * Local types
+ ******************************************************************************/
 
 /******************************************************************************
-* Local function prototypes
-******************************************************************************/
+ * Local function prototypes
+ ******************************************************************************/
 
 /******************************************************************************
-* Local variables
-******************************************************************************/
-const char *logo_msg = {"\r\n\n"
+ * Local variables
+ ******************************************************************************/
+const char *logo_msg = { "\r\n\n"
 		"  *******  ******     ***    \r\n"
 		"  **   *   **   *    *   *   \r\n"
 		"  *        *          *       \r\n"
@@ -53,84 +53,79 @@ const char *logo_msg = {"\r\n\n"
 		" **       **            *     \r\n"
 		" *        *        *     *     \r\n"
 		"**     *  **     * *     *      \r\n"
-		"*******  ********   ****        \r\n"};
+		"*******  ********   ****        \r\n" };
 /******************************************************************************
-* Global functions
-******************************************************************************/
-
+ * Global functions
+ ******************************************************************************/
 
 void Task_Control(void *arg) {
 	App_Control(&sApp);
 }
 
 void Task_Gui(void *arg) {
-//	LREP("pvolt: %d pcurr %d bvolt: %d bC %d duty: 0.%03d cnt: %d stat: 0x%x\r\n",  
-//			(int)(sApp.panelVolt.realValue), 
-//			(int)(sApp.panelCurr.realValue),			
-//			(int)(sApp.battVolt.realValue),
-//			(int)(sApp.battCurr),
-//			(int)(sApp.currDutyPer * 1000.0),
-//			(int)(Timer_GetCurrCount(sApp.hTimerControl)),
-//			(int)(sApp.eDevState));
-	
-	LREP("pv: %d pvs: %d pi %d pp: %d bi %d duty: 0.%03d stat: 0x%x\r\n",  
-				(int)(sApp.panelVolt.realValue),
-				(int)(sApp.sMppt.VmppOut),				
-				(int)(sApp.panelCurr.realValue),
-				(int)(sApp.panelPower),
-				(int)(sApp.battCurr),
-				(int)(sApp.currDutyPer * 1000.0),				
-				(int)(sApp.eDevState));
+//	LREP("pvolt: %d pcurr %d bvolt: %d duty: 0.%03d\r\n",  
+//			(int)(sApp.panelVolt.sEMA.Out), 
+//			(int)(sApp.panelCurr.sEMA.Out),			
+//			(int)(sApp.battVolt.sEMA.Out),
+//			(int)(sApp.currDutyPer * 1000.0));
+
+	LREP("pv: %d pvs: %d pi %d pp: %d bi %d bv %d duty: 0.%03d stat: 0x%x\r\n",
+			(int) (sApp.panelVolt.realValue), (int) (sApp.sMppt.VmppOut),
+			(int) (sApp.panelCurr.realValue), (int) (sApp.panelPower),
+			(int) (sApp.battCurr), (int) (sApp.battVolt.realValue),
+			(int) (sApp.currDutyPer * 1000.0), (int) (sApp.eDevState));
 }
 
-int main (void)
-{
-    BSP_Init(); 
-    App_Init(&sApp);
-    LREP(logo_msg);
-    LREP("SOLAR CHARGER APPLICATION STARTED\r\nbuilt time " __TIME__ " " __DATE__ "\r\n\n");
-    shell_init(cmd_table, my_shell_init);
-    
-    task_init();	
-	sApp.task_shell 	= task_create(Debug_Task,	// task function 
-									  NULL, 		// parameter
-									  TRUE);		// always run
-	
-	sApp.task_control 	= task_create(Task_Control, NULL, FALSE);
-	sApp.task_gui		= task_create(Task_Gui, NULL, FALSE);
+int main(void) {
+	BSP_Init();
+	App_Init(&sApp);
+	LREP(logo_msg);
+	LREP(
+			"SOLAR CHARGER APPLICATION STARTED\r\nbuilt time " __TIME__ " " __DATE__ "\r\n\n");
+	shell_init(cmd_table, my_shell_init);
 
-	ASSERT(sApp.task_control != NULL);
-	ASSERT(sApp.task_shell != NULL);	
-	
+	task_init();
+	sApp.task_shell = task_create(Debug_Task,	// task function 
+			NULL, 		// parameter
+			TRUE);		// always run
+
+	sApp.task_control = task_create(Task_Control, NULL, FALSE);
+	sApp.task_gui = task_create(Task_Gui, NULL, FALSE);
+
+	ASSERT(sApp.task_control != NULL); ASSERT(sApp.task_shell != NULL);
+
 	LREP("firmware version %s\r\n", APP_FIRMWARE_VER);
 	LREP("initilized done \r\n\n");
 	LREP("type \"help\" to show support command\r\n\n");
-	
+
 	LREP(SHELL_PROMPT);
-    while (1) {        
-        Adc_CalcRealValueBgrd(sApp.panelVolt);
-        Adc_CalcRealValueBgrd(sApp.panelCurr);
-        Adc_CalcRealValueBgrd(sApp.battVolt);        
-        sApp.panelPower = sApp.panelVolt.realValue * sApp.panelCurr.realValue;
-        
-        if(sApp.battVolt.realValue > BATT_VOLT_EMPTY_VALUE) {			 
+
+	while (1) {
+
+#if APP_PROCESS_METHOD == APP_PROCESS_IN_BGND
+		Adc_CalcRealValueBgrd(sApp.panelVolt);
+		Adc_CalcRealValueBgrd(sApp.panelCurr);
+		Adc_CalcRealValueBgrd(sApp.battVolt);
+
+		sApp.panelPower = sApp.panelVolt.realValue * sApp.panelCurr.realValue;
+
+		if(sApp.battVolt.realValue > BATT_EMPTY_VOLT_VALUE) {
 			sApp.battCurr = sApp.panelPower * POWER_FACTOR / sApp.battVolt.realValue;
-        } else {
-        	sApp.battCurr = 0;        	
-        }
-        
-        if(sApp.battCurr < 50 && sApp.eBuckerSM > BSM_BUCKER_STARTING) {
-        	if(sApp.eBuckerSM != BSM_BUCKER_IDLE) {
-        		LREP("Detect lost current start timer\r\n\n");
+		} else {
+			sApp.battCurr = 0;
+		}
+
+		if(sApp.battCurr < BATT_DETECT_REM_CURR_VAL &&
+				sApp.eBuckerSM > BSM_BUCKER_STARTING) {
+			if(sApp.eBuckerSM != BSM_BUCKER_IDLE) {
+				LREP("Detect lost current start timer\r\n\n");
 				sApp.eBuckerSM = BSM_BUCKER_IDLE;
-				App_StopBucker(&sApp);        	
-				Timer_StartAt(sApp.hTimerControl, 5000);
-        	}
-        }
-              
-    	task_main_exec();
-    }
+				App_StopBucker(&sApp);
+				Timer_StartAt(sApp.hTimerControl, BATT_DETECT_REM_WAIT_TIME);
+			}
+		}
+#endif        
+		task_main_exec();
+	}
 }
-
-
 
