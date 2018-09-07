@@ -88,9 +88,8 @@ typedef struct SApp_ {
 	EBuckerSM		eBuckerSM;
 	
 	// controller
-	MPPT_PNO_F		sMppt;
-	SSPInfo			sSPInfo;
-	SPID			sPid;
+	MPPT_PNO_F		sMppt;	
+	//SPID			sPid;
 
 	// measurement
 	float			panelPower;
@@ -102,6 +101,7 @@ typedef struct SApp_ {
 	float			battLastVolt;
 	float			battCurr;
 	float			battLastCurr;
+	float			battDeltaCurr;
 	uint16_t 		pvAdcValue;
 	uint16_t 		piAdcValue;
 	uint16_t 		bvAdcValue;	

@@ -10,7 +10,7 @@
 
 #define 	APP_FIRMWARE_VER				("1.0.0")
 #define		APP_SETTING_PASSWD				("load")
-#define		APP_DEVICE_ID					(1)
+#define		APP_DEVICE_ID_DEFAULT			(1)
 
 #define		APP_PROCESS_IN_ISR				0
 #define		APP_PROCESS_IN_BGND				1
@@ -33,8 +33,8 @@
 #define 	BATT_BOOST_VOLT_VALUE			(14200)	// mVolt
 #define 	BATT_FLOAT_VOLT_VALUE			(13800) // mVolt
 #define 	BATT_EMPTY_VOLT_VALUE			(9000)	// mVolt
-#define		BATT_DETECT_REM_CURR_VAL		(50)
-#define		BATT_DETECT_REM_WAIT_TIME		(5000)	
+#define		BATT_DETECT_REM_CURR_VAL		(100)
+#define		BATT_DETECT_REM_WAIT_TIME		(1000)	
 
 #define		BATT_BOOST_CURRENT_VALUE		(2000) 	// Ampe
 #define 	BATT_MIN_CURRENT_VALUE			(500)

@@ -121,16 +121,16 @@ void App_Init(SApp *pApp) {
 	
 	pApp->eBuckerSM = BSM_BUCKER_STOP;		
 	pApp->currDutyPer = 0;
-	pApp->id = APP_DEVICE_ID;
+	pApp->id = APP_DEVICE_ID_DEFAULT;
 	
 	MPPT_PNO_F_init(&pApp->sMppt);
 	
-    PID_Init(&pApp->sPid, 
-    		BUCKER_Kp, 
-    		BUCKER_Ki, 
-    		BUCKER_Kd, 
-    		PID_UPDATE_FREQ,
-            KP_A_COEFF, KP_B_COEFF);
+//    PID_Init(&pApp->sPid, 
+//    		BUCKER_Kp, 
+//    		BUCKER_Ki, 
+//    		BUCKER_Kd, 
+//    		PID_UPDATE_FREQ,
+//            KP_A_COEFF, KP_B_COEFF);
 	
 	// init input caclculating
 	Adc_InitValue(pApp->battVolt,                   /* adc node */
@@ -154,12 +154,13 @@ void App_Init(SApp *pApp) {
 				  0,
 				  2);
 	
-	pApp->panelLastVolt = 0;
-	pApp->panelLastCurr = 0;
-	pApp->battLastVolt = 0;	
-	pApp->battCurr = 0;
-	pApp->battLastCurr = 0;
-	pApp->panelPower = 0;
+	pApp->panelLastVolt 			= 0;
+	pApp->panelLastCurr 			= 0;
+	pApp->battLastVolt 				= 0;	
+	pApp->battCurr 					= 0;
+	pApp->battLastCurr 				= 0;
+	pApp->panelPower 				= 0;
+	pApp->battDeltaCurr				= 0;
 	
 	// init control value 
 	pApp->chargBoostTime 			= APP_CHARGE_CONST_VOLT_TIME;
@@ -168,6 +169,7 @@ void App_Init(SApp *pApp) {
 	pApp->chargFloatVolt			= BATT_FLOAT_VOLT_VALUE;
 	pApp->vUsb						= TRUE;
 	pApp->downRate					= 100;
+	
 	Timer_Start(pApp->hTimerGui);
 #if APP_PROCESS_METHOD == APP_PROCESS_IN_BGND
 	Timer_Start(pApp->hTimerUpdate);
@@ -1017,7 +1019,7 @@ void UART_HandleInt(UART_Type *pUART) {
  */
 void PIT0_HandleInt(void) {	
 	
-	GPIO_SET_HIGH_DISP_BATT_EMPTY();
+	//GPIO_SET_HIGH_DISP_BATT_EMPTY();
 	
 	ADC_SetChannel(ADC,ADC_CHANNEL_AD8);
 	ADC_SetChannel(ADC,ADC_CHANNEL_AD10);
@@ -1030,21 +1032,27 @@ void PIT0_HandleInt(void) {
 	Adc_CalcRealValueIsr(sApp.panelVolt, 	sApp.pvAdcValue);
 	Adc_CalcRealValueIsr(sApp.panelCurr, 	sApp.piAdcValue);
 	Adc_CalcRealValueIsr(sApp.battVolt, 	sApp.bvAdcValue);	
-    sApp.panelPower = sApp.panelVolt.realValue * sApp.panelCurr.realValue;    
+    sApp.panelPower = sApp.panelVolt.realValue * sApp.panelCurr.realValue;
     if(sApp.battVolt.realValue > BATT_EMPTY_VOLT_VALUE) {			 
-		sApp.battCurr = sApp.panelPower * POWER_FACTOR / sApp.battVolt.realValue;
+		sApp.battCurr = sApp.panelPower * POWER_FACTOR / sApp.battVolt.realValue;		
     } else {
     	sApp.battCurr = 0;        	
-    }    
-//	if(sApp.battCurr < BATT_DETECT_REM_CURR_VAL &&
-//			sApp.eBuckerSM > BSM_BUCKER_STARTING) {
-//		if(sApp.eBuckerSM != BSM_BUCKER_IDLE) {
-//			LREP("Detect lost current start timer\r\n\n");
-//			sApp.eBuckerSM = BSM_BUCKER_IDLE;
-//			App_StopBucker(&sApp);
-//			Timer_StartAt(sApp.hTimerControl, BATT_DETECT_REM_WAIT_TIME);
-//		}
-//	}
+    }
+    
+    sApp.downRate--;
+    if(sApp.downRate <= 0) {
+		sApp.battDeltaCurr = sApp.battCurr - sApp.battLastCurr;
+		sApp.battLastCurr = sApp.battCurr;
+		sApp.downRate=150;
+    }
+        
+	if(sApp.battDeltaCurr < -150 && sApp.eBuckerSM != BSM_BUCKER_IDLE) {
+		LREP("Detect lost current start timer\r\n\n");
+		sApp.eBuckerSM = BSM_BUCKER_IDLE;
+		App_StopBucker(&sApp);
+		Timer_StartAt(sApp.hTimerControl, BATT_DETECT_REM_WAIT_TIME);		
+	}
+	
 	App_Control(&sApp);
 #endif
 	    
@@ -1088,7 +1096,7 @@ void PIT0_HandleInt(void) {
 	
     LED_ActAll();
     
-    GPIO_SET_LOW_DISP_BATT_EMPTY();
+    //GPIO_SET_LOW_DISP_BATT_EMPTY();
 }
 
 /*****************************************************************************/
