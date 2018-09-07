@@ -69,10 +69,15 @@ void Task_Gui(void *arg) {
 //			(int)(sApp.battVolt.sEMA.Out),
 //			(int)(sApp.currDutyPer * 1000.0));
 
-	LREP("pv: %d pvs: %d pi %d pp: %d bi %d bv %d duty: 0.%03d stat: 0x%x-0x%x\r\n",
+	int watz, fwatz;
+	watz = (int)(sApp.panelPower / 1000000);
+	fwatz = (int)((sApp.panelPower - (watz * 1000000)) / 1000);
+	
+	LREP("pv: %d pvs: %d pi %d pp: %d.%d bi %d bv %d duty: 0.%03d stat: 0x%x-0x%x\r\n",
 			(int) (sApp.panelVolt.realValue), (int) (sApp.sMppt.VmppOut),
-			(int) (sApp.panelCurr.realValue), (int) (sApp.panelPower),
-			(int) (sApp.battCurr), (int) (sApp.battVolt.realValue),
+			(int) (sApp.panelCurr.realValue),
+			(int) watz, (int)fwatz,(int) (sApp.battCurr), 
+			(int) (sApp.battVolt.realValue),
 			(int) (sApp.currDutyPer * 1000.0), (int) (sApp.eDevState), 
 			(int)sApp.eBuckerSM);
 }

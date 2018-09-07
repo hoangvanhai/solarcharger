@@ -53,16 +53,17 @@ uint32_t		GPIO_Pin[] = {
  *  @return Void.
  *  @note
  */
-void BSP_Init() {
-	//DisableInterrupts;
+void BSP_Init() {	
 	sysinit();
+//	FLASH_Init(BUS_CLK_HZ);
 	BSP_InitPwm();
 	BSP_InitUart(115200);
 	BSP_InitPIT0(APP_TIMER_FREQ);
 	//BSP_InitPIT1(ADC_READ_FREQ);	
 	BSP_InitAdc();
 	BSP_InitGpio();
-	//EnableInterrupts;
+//	BSP_FlashInit();
+	
 }
 /*****************************************************************************/
 /** @brief 
@@ -221,6 +222,42 @@ void BSP_InitGpio() {
 	LED_InitAll();
 }
 
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
+
+#define VERIFIED_SECTOR				32
+
+void BSP_FlashInit(void) {
+    uint32_t i;
+	uint8_t  u8DataBuff[512];
+	    
+    
+    
+    /* Erase 99th sector */
+    FLASH_EraseSector(VERIFIED_SECTOR*FLASH_SECTOR_SIZE);
+    
+    for(i=0;i<256;i++)
+    {
+        u8DataBuff[i] = (uint8_t)i;
+    }
+    
+    /* write data to erased sector */
+    FLASH_Program(VERIFIED_SECTOR * FLASH_SECTOR_SIZE,		&u8DataBuff[0],		256 );
+    //FLASH_Program(VERIFIED_SECTOR * FLASH_SECTOR_SIZE+256,	&u8DataBuff[0],		256 );
+    
+    for( i=0;i<256;i++ )
+    {
+    	printf("0x%x,",*((uint8_t *)(i+VERIFIED_SECTOR*FLASH_SECTOR_SIZE)));        
+    }
+    printf("\r\n\r\n");
+    
+}
 /*****************************************************************************/
 /** @brief 
  *		   

@@ -143,7 +143,7 @@ void App_Init(SApp *pApp) {
 	Adc_InitValue(pApp->panelCurr,
 				  0,
 				  ADC_PANEL_CURR_COEFF,
-				  1000,
+				  100,
 				  1976,	//1939,	//1963,
 				  2);
 	
@@ -154,13 +154,20 @@ void App_Init(SApp *pApp) {
 				  0,
 				  2);
 	
+	Adc_InitValue(pApp->panelAvgCurr,
+				  1,
+				  ADC_PANEL_CURR_COEFF,
+				  3000,
+				  1978,
+				  2);
+	
+	
 	pApp->panelLastVolt 			= 0;
 	pApp->panelLastCurr 			= 0;
 	pApp->battLastVolt 				= 0;	
 	pApp->battCurr 					= 0;
 	pApp->battLastCurr 				= 0;
 	pApp->panelPower 				= 0;
-	pApp->battDeltaCurr				= 0;
 	
 	// init control value 
 	pApp->chargBoostTime 			= APP_CHARGE_CONST_VOLT_TIME;
@@ -168,7 +175,7 @@ void App_Init(SApp *pApp) {
 	pApp->chargBoostVolt 			= BATT_BOOST_VOLT_VALUE;
 	pApp->chargFloatVolt			= BATT_FLOAT_VOLT_VALUE;
 	pApp->vUsb						= TRUE;
-	pApp->downRate					= 100;
+	pApp->downRate					= 0;
 	
 	Timer_Start(pApp->hTimerGui);
 #if APP_PROCESS_METHOD == APP_PROCESS_IN_BGND
@@ -1031,28 +1038,35 @@ void PIT0_HandleInt(void) {
 #if APP_PROCESS_METHOD == APP_PROCESS_IN_ISR
 	Adc_CalcRealValueIsr(sApp.panelVolt, 	sApp.pvAdcValue);
 	Adc_CalcRealValueIsr(sApp.panelCurr, 	sApp.piAdcValue);
-	Adc_CalcRealValueIsr(sApp.battVolt, 	sApp.bvAdcValue);	
+	Adc_CalcRealValueIsr(sApp.battVolt, 	sApp.bvAdcValue);
+	Adc_CalcRealValueIsr(sApp.panelAvgCurr,	sApp.piAdcValue);
+	
     sApp.panelPower = sApp.panelVolt.realValue * sApp.panelCurr.realValue;
     if(sApp.battVolt.realValue > BATT_EMPTY_VOLT_VALUE) {			 
 		sApp.battCurr = sApp.panelPower * POWER_FACTOR / sApp.battVolt.realValue;		
     } else {
     	sApp.battCurr = 0;        	
     }
-    
+           
     sApp.downRate--;
     if(sApp.downRate <= 0) {
-		sApp.battDeltaCurr = sApp.battCurr - sApp.battLastCurr;
-		sApp.battLastCurr = sApp.battCurr;
-		sApp.downRate=150;
+    	sApp.panelPower = sApp.panelVolt.realValue * sApp.panelAvgCurr.realValue;
+    	if(sApp.battVolt.realValue > BATT_EMPTY_VOLT_VALUE) {			 
+			sApp.battCurrAvg = sApp.panelPower * POWER_FACTOR / sApp.battVolt.realValue;		
+		} else {
+			sApp.battCurrAvg = 0;        	
+		}
+		if(sApp.eBuckerSM != BSM_BUCKER_IDLE && 
+			sApp.eBuckerSM != BSM_BUCKER_STOP && 
+			sApp.battCurrAvg < BATT_DETECT_REM_CURR_VAL) {		
+			LREP("BI %d\r\n\n", (int)sApp.battCurrAvg);
+			sApp.eBuckerSM = BSM_BUCKER_IDLE;
+			App_StopBucker(&sApp);
+			Timer_StartAt(sApp.hTimerControl, BATT_DETECT_REM_WAIT_TIME);		
+		}	    
+		sApp.downRate = 6000;
     }
-        
-	if(sApp.battDeltaCurr < -150 && sApp.eBuckerSM != BSM_BUCKER_IDLE) {
-		LREP("Detect lost current start timer\r\n\n");
-		sApp.eBuckerSM = BSM_BUCKER_IDLE;
-		App_StopBucker(&sApp);
-		Timer_StartAt(sApp.hTimerControl, BATT_DETECT_REM_WAIT_TIME);		
-	}
-	
+    		
 	App_Control(&sApp);
 #endif
 	    

@@ -23,7 +23,7 @@
 #define		MILLI_SEC_ON_HOUR				(7200000)
 #define 	MILLI_SEC_ON_MINUTE				(120000)
 
-#define		APP_CHARGE_CONST_VOLT_TIME		(120 * MILLI_SEC_ON_MINUTE)	// const volt on 120 minute
+#define		APP_CHARGE_CONST_VOLT_TIME		(1 * MILLI_SEC_ON_MINUTE)	// const volt on 120 minute
 
 #define		APP_CONTROL_OFFSET_VALUE		(50.0)
 
@@ -33,12 +33,10 @@
 #define 	BATT_BOOST_VOLT_VALUE			(14200)	// mVolt
 #define 	BATT_FLOAT_VOLT_VALUE			(13800) // mVolt
 #define 	BATT_EMPTY_VOLT_VALUE			(9000)	// mVolt
-#define		BATT_DETECT_REM_CURR_VAL		(100)
-#define		BATT_DETECT_REM_WAIT_TIME		(1000)	
+#define		BATT_DETECT_REM_CURR_VAL		(200)
+#define		BATT_DETECT_REM_WAIT_TIME		(1000)
 
 #define		BATT_BOOST_CURRENT_VALUE		(2000) 	// Ampe
-#define 	BATT_MIN_CURRENT_VALUE			(500)
-
 
 #define 	PANEL_VOLT_HIGH_PROTECT			(60000)	// volt
 #define 	PANEL_VOLT_LOW_PROTECT			(15000)	// milli volt

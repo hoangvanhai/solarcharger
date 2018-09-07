@@ -16,6 +16,7 @@
 #include "gpio.h"
 #include "pit.h"
 #include "ftm.h"
+#include "flash.h"
 #include "sysinit.h"
 #include "sim.h"
 #include "MKE06Z4.h"
@@ -45,6 +46,7 @@ void BSP_InitUart(uint32_t bitrate);
 void BSP_InitPwm();
 void BSP_InitAdc();
 void BSP_InitGpio();
+void BSP_FlashInit(void);
 void BSP_InitGpioPin(uint32_t pin);
 void BSP_SetHighGpioPin(uint32_t pin);
 void BSP_SetLowGpioPin(uint32_t pin);

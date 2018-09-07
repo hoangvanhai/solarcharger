@@ -75,11 +75,6 @@ typedef struct SAdcValue_{
     SMATH_EMAVG_IQ_C sEMA;
 }SAdcValue;
 
-typedef struct SSolarPanelInfo_ {
-	float			currCurr;
-	float			currVolt;
-	float			currPower;
-}SSPInfo;
 
 typedef struct SApp_ {
 	uint8_t			id;
@@ -98,10 +93,11 @@ typedef struct SApp_ {
 	SAdcValue		panelCurr;
 	float			panelLastCurr;
 	SAdcValue		battVolt;
+	SAdcValue		panelAvgCurr;
 	float			battLastVolt;
 	float			battCurr;
 	float			battLastCurr;
-	float			battDeltaCurr;
+	float			battCurrAvg;
 	uint16_t 		pvAdcValue;
 	uint16_t 		piAdcValue;
 	uint16_t 		bvAdcValue;	
@@ -229,7 +225,7 @@ typedef struct SApp_ {
 												App_SetDutyPercen((pApp)->currDutyPer);	\
 												GPIO_SET_LOW_CTRL_BUCK_DRV(); 	\
 												GPIO_SET_LOW_DISP_BATT_CHARG(); 	\
-												ASSERT(0);	\
+												/*ASSERT(0);*/	\
 											}
 
 #define App_ResetSpInfo(pApp)				{ \
