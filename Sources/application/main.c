@@ -69,17 +69,48 @@ void Task_Gui(void *arg) {
 //			(int)(sApp.battVolt.sEMA.Out),
 //			(int)(sApp.currDutyPer * 1000.0));
 
-	int watz, fwatz;
-	watz = (int)(sApp.panelPower / 1000000);
-	fwatz = (int)((sApp.panelPower - (watz * 1000000)) / 1000);
+//	int watz, fwatz;
+//	watz = (int)(sApp.panelPower / 1000000);
+//	fwatz = (int)((sApp.panelPower - (watz * 1000000)) / 1000);
 	
-	LREP("pv: %d pvs: %d pi %d pp: %d.%d bi %d bv %d duty: 0.%03d stat: 0x%x-0x%x\r\n",
-			(int) (sApp.panelVolt.realValue), (int) (sApp.sMppt.VmppOut),
-			(int) (sApp.panelCurr.realValue),
-			(int) watz, (int)fwatz,(int) (sApp.battCurr), 
-			(int) (sApp.battVolt.realValue),
-			(int) (sApp.currDutyPer * 1000.0), (int) (sApp.eDevState), 
-			(int)sApp.eBuckerSM);
+//	LREP("status pv: %d pvs: %d pi %d pp: %d.%d bi %d bv %d duty: 0.%03d stat: 0x%x-0x%x\r\n",
+//			(int) (sApp.panelVolt.realValue), (int) (sApp.sMppt.VmppOut),
+//			(int) (sApp.panelCurr.realValue),
+//			(int) watz, (int)fwatz,(int) (sApp.battCurr), 
+//			(int) (sApp.battVolt.realValue),
+//			(int) (sApp.currDutyPer * 1000.0), (int) (sApp.eDevState), 
+//			(int) sApp.eBuckerSM);
+	
+//	LREP("**status: ID: %d ST: %d PV: %d mV PI: %d mA PP: %d mW BV: %d mV BI: %d mA\r\n\n",
+//				(int)sApp.id,
+//				(int)sApp.eBuckerSM,
+//				(int)sApp.panelVolt.realValue,
+//				(int)sApp.panelCurr.realValue,
+//				(int)sApp.panelPower,
+//				(int)sApp.battVolt.realValue,
+//				(int)sApp.battCurr);
+	
+//	LREP("status: ID: %d ST: %d PV: %d PI: %d PP: %d BV: %d BI: %d\r\n\n",
+//				(int)sApp.id,
+//				(int)sApp.eBuckerSM,
+//				(int)sApp.panelVolt.realValue,
+//				(int)sApp.panelCurr.realValue,
+//				(int)sApp.panelPower,
+//				(int)sApp.battVolt.realValue,
+//				(int)sApp.battCurr);
+
+	
+//	LREP("*status: \r\nID: %d \r\nST: %d\r\n PV: %d mV\r\nPI: %d mA\r\nPP: %d mW\r\nBV: %d mV\r\nBI: %d mA\r\n#\n",
+//				(int)sApp.id,
+//				(int)sApp.eBuckerSM,
+//				(int)sApp.panelVolt.realValue,
+//				(int)sApp.panelCurr.realValue,
+//				(int)sApp.panelPower,
+//				(int)sApp.battVolt.realValue,
+//				(int)sApp.battCurr);
+	
+//	LREP("pass\r\n\n");
+	
 }
 
 int main(void) {

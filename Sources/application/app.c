@@ -79,8 +79,8 @@ const shell_command_t cmd_table[] =
 	{"sinfo", 	0u, 0u, get_info, 		"show board info", ""},
 	{"log", 	1u, 1u, set_log, 		"continuous log board status", "<on|off>"},
 	{"scfg", 	0u, 0u, get_setting, 	"show board setting", ""},
-	{"mppt", 	1u, 1u, mppt_volt, 		"set mppt volt", ""},
-	/*{"cancel", 	0u, 0u, cancel, 		"discard pending command", ""},*/	
+	/*{"mppt", 	1u, 1u, mppt_volt, 		"set mppt volt", ""},
+	{"cancel", 	0u, 0u, cancel, 		"discard pending command", ""},*/	
 	{0, 0u, 0u, 0, 0, 0}
 };
 
@@ -638,7 +638,7 @@ void set_duty_cmd(int32_t argc, char **argv) {
  */
 void get_info(int32_t argc, char **argv) {	
 
-	LREP("show info:\r\n ID: %d\r\n PV: %d mV\r\n PI: %d mA\r\n PP: %d mW\r\n BV: %d mV\r\n BI: %d mA\r\n\n",
+	LREP("status:\r\n ID: %d\r\n PV: %d mV\r\n PI: %d mA\r\n PP: %d mW\r\n BV: %d mV\r\n BI: %d mA\r\n\n",
 			(int)sApp.id,
 			(int)sApp.panelVolt.realValue,
 			(int)sApp.panelCurr.realValue,

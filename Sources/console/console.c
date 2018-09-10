@@ -82,7 +82,7 @@ void Debug_Task(void *arg) {
 			LREP(SHELL_PROMPT);		
 		} else {
 			shell_push_buffer("pass ", 5);
-			LREP("password: ");
+			LREP("pass\r\n");
 		}
 		if(err == SHELL_CMD_ERR_INVALID_SYNTAX) {
 			//LREP(SHELL_PROMPT);
@@ -104,7 +104,9 @@ uint8_t PushCommand(uint8_t ch)
 {
 	if(ch != EOF)
 	{
-		if (((char)ch != SHELL_CR) && (shell_cmdline_pos < SHELL_CMDLINE_SIZE))
+		//if (((char)ch != SHELL_CR) && (shell_cmdline_pos < SHELL_CMDLINE_SIZE))
+		if (((char)ch != SHELL_CR) && (char)ch != SHELL_LF && 
+				(shell_cmdline_pos < SHELL_CMDLINE_SIZE))
 		{
 			switch(ch)
 			{
