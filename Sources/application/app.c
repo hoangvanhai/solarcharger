@@ -873,45 +873,54 @@ void set_passwd(int32_t argc, char **argv) {
 			case CMD_ON_OFF_CHARGE:
 				if(sApp.cmdParam == 1) {
 					App_ClearDevState(&sApp, DS_USER_DISABLE);
-					LREP("user enabled charger\r\n\n");					
+					//LREP("user enabled charger\r\n\n");
+					LREP("command success\r\n\n");
 				} else {
 					App_SetDevState(&sApp, DS_USER_DISABLE);
-					LREP("user disabled charger\r\n\n");
+					//LREP("user disabled charger\r\n\n");
+					LREP("command success\r\n\n");
 				}
 				break;
 			case CMD_ON_OFF_VUSB:
 				if(sApp.cmdParam == 1) {
 					GPIO_SET_HIGH_CTRL_VUSB_EN();
-					LREP("user control on vusb\r\n\n");
+					//LREP("user control on vusb\r\n\n");
+					LREP("command success\r\n\n");
 					sApp.vUsb = TRUE;
 				} else {
 					GPIO_SET_LOW_CTRL_VUSB_EN();
-					LREP("user control off vusb\r\n\n");
+					//LREP("user control off vusb\r\n\n");
+					LREP("command success\r\n\n");
 					sApp.vUsb = FALSE;
 				}
 				break;
 			case CMD_SET_BOARD_ID:
 				sApp.id = (int)sApp.cmdParam;
-				LREP("user set board id = %d\r\n\n", sApp.id);
+				//LREP("user set board id = %d\r\n\n", sApp.id);
+				LREP("command success\r\n\n");
 				break;
 			case CMD_SET_FLOAT_VOLT:				
 				sApp.chargFloatVolt = sApp.cmdParam;
-				LREP("user set float battery voltage: %d\r\n\n", (int)sApp.chargFloatVolt);
+				//LREP("user set float battery voltage: %d\r\n\n", (int)sApp.chargFloatVolt);
+				LREP("command success\r\n\n");
 				App_ResetControl(&sApp);
 				break;
 			case CMD_SET_BOOST_VOLT:
 				sApp.chargBoostVolt = sApp.cmdParam;
-				LREP("user set boost battery voltage: %d\r\n\n", (int)sApp.chargBoostVolt);
+				//LREP("user set boost battery voltage: %d\r\n\n", (int)sApp.chargBoostVolt);
+				LREP("command success\r\n\n");
 				App_ResetControl(&sApp);
 				break;
 			case CMD_SET_CURR_MAX:
 				sApp.chargBoostCurrent = sApp.cmdParam;
-				LREP("user set boost battery current: %d\r\n\n", (int)sApp.chargBoostCurrent);
+				//LREP("user set boost battery current: %d\r\n\n", (int)sApp.chargBoostCurrent);
+				LREP("command success\r\n\n");
 				App_ResetControl(&sApp);
 				break;
 			case CMD_SET_BOOST_TIME:
 				sApp.chargBoostTime = (uint32_t)(sApp.cmdParam * (float)MILLI_SEC_ON_MINUTE);
-				LREP("user set boost time: %d minute\r\n\n", (int)(sApp.cmdParam));
+				LREP("command success\r\n\n");
+				//LREP("user set boost time: %d minute\r\n\n", (int)(sApp.cmdParam));
 				App_ResetControl(&sApp);
 				break;
 			case CMD_SET_LOG_STT:
@@ -919,7 +928,8 @@ void set_passwd(int32_t argc, char **argv) {
 					Timer_Stop(sApp.hTimerGui);
 				} else {
 					Timer_Start(sApp.hTimerGui);
-				}				
+				}
+				LREP("command success\r\n\n");
 				break;
 				
 			case CMD_RESTART:
