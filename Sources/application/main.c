@@ -81,14 +81,14 @@ void Task_Gui(void *arg) {
 //			(int) (sApp.currDutyPer * 1000.0), (int) (sApp.eDevState), 
 //			(int) sApp.eBuckerSM);
 	
-//	LREP("**status: ID: %d ST: %d PV: %d mV PI: %d mA PP: %d mW BV: %d mV BI: %d mA\r\n\n",
-//				(int)sApp.id,
-//				(int)sApp.eBuckerSM,
-//				(int)sApp.panelVolt.realValue,
-//				(int)sApp.panelCurr.realValue,
-//				(int)sApp.panelPower,
-//				(int)sApp.battVolt.realValue,
-//				(int)sApp.battCurr);
+	LREP("status: ID: %d ST: %d PV: %d mV PI: %d mA PP: %d mW BV: %d mV BI: %d mA\r\n",
+				(int)sApp.id,
+				(int)sApp.eBuckerSM,
+				(int)sApp.panelVolt.realValue,
+				(int)sApp.panelCurr.realValue,
+				(int)sApp.panelPower,
+				(int)sApp.battVolt.realValue,
+				(int)sApp.battCurr);
 	
 //	LREP("status: ID: %d ST: %d PV: %d PI: %d PP: %d BV: %d BI: %d\r\n\n",
 //				(int)sApp.id,
@@ -100,7 +100,7 @@ void Task_Gui(void *arg) {
 //				(int)sApp.battCurr);
 
 	
-//	LREP("*status: \r\nID: %d \r\nST: %d\r\n PV: %d mV\r\nPI: %d mA\r\nPP: %d mW\r\nBV: %d mV\r\nBI: %d mA\r\n#\n",
+//	LREP("status: \r\nID: %d \r\nST: %d\r\n PV: %d mV\r\nPI: %d mA\r\nPP: %d mW\r\nBV: %d mV\r\nBI: %d mA\r\n",
 //				(int)sApp.id,
 //				(int)sApp.eBuckerSM,
 //				(int)sApp.panelVolt.realValue,

@@ -117,7 +117,9 @@ typedef struct SApp_ {
 	float			chargBoostVolt;
 	float			chargFloatVolt;
 	uint32_t		chargBoostTime;
-	uint8_t			vUsb;;
+	uint8_t			vUsb;
+	uint8_t			log;
+	uint8_t			charg;
 	
 	EDevCmd			eDevPendCmd;
 	float			cmdParam;

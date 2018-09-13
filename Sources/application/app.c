@@ -56,6 +56,9 @@ void set_passwd(int32_t argc, char **argv);
 void get_info(int32_t argc, char **argv);
 void set_log(int32_t argc, char **argv);
 void get_setting(int32_t argc, char **argv);
+void set_config(int32_t argc, char **argv);
+void set_vusbx(int32_t argc, char **argv);
+void set_logx(int32_t argc, char **argv);
 void cancel(int32_t argc, char **argv);
 void mppt_volt(int32_t argc, char **argv);
 
@@ -77,8 +80,11 @@ const shell_command_t cmd_table[] =
 	{"bcurr", 	1u, 1u, set_boost_curr, "set boost current max (mA), ex: \"bcurr 5000\" for set boost current = 5000 mA", "<ampe>"},
 	{"btime", 	1u, 1u, set_const_volt_time, "set boost time (minute), ex: \"btime 120\" for set boost time = 120 minute", "<time>"},	
 	{"sinfo", 	0u, 0u, get_info, 		"show board info", ""},
-	{"log", 	1u, 1u, set_log, 		"continuous log board status", "<on|off>"},
+	{"log", 	1u, 1u, set_log, 		"continuous log board status", "<on|off>"},	
 	{"scfg", 	0u, 0u, get_setting, 	"show board setting", ""},
+	{"config", 	8u, 8u, set_config, 	"reserved", ""},
+	{"lx", 	1u, 1u, set_logx, 			"reserved", ""},
+	{"vx", 	1u, 1u, set_vusbx, 			"reserved", ""},
 	/*{"mppt", 	1u, 1u, mppt_volt, 		"set mppt volt", ""},
 	{"cancel", 	0u, 0u, cancel, 		"discard pending command", ""},*/	
 	{0, 0u, 0u, 0, 0, 0}
@@ -175,9 +181,11 @@ void App_Init(SApp *pApp) {
 	pApp->chargBoostVolt 			= BATT_BOOST_VOLT_VALUE;
 	pApp->chargFloatVolt			= BATT_FLOAT_VOLT_VALUE;
 	pApp->vUsb						= TRUE;
+	pApp->charg						= TRUE;
+	pApp->log						= FALSE;
 	pApp->downRate					= 0;
 	
-	Timer_Start(pApp->hTimerGui);
+	//Timer_Start(pApp->hTimerGui);
 #if APP_PROCESS_METHOD == APP_PROCESS_IN_BGND
 	Timer_Start(pApp->hTimerUpdate);
 #endif
@@ -444,7 +452,7 @@ void App_Control(SApp *pApp) {
 			
 			if(sApp.battCurr >= pApp->chargBoostCurrent) {
 				// change to const current phase
-				pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
+				//pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
 				LREP("FV->I ");					
 			}
 		#endif
@@ -834,6 +842,49 @@ void get_setting(int32_t argc, char **argv) {
 			
 }
 
+
+void set_config(int32_t argc, char **argv) {
+	
+	if (argc == 9)
+	{		
+		sApp.id 				= atoi(argv[1]);
+		sApp.chargFloatVolt 	= atof(argv[2]);
+		sApp.chargBoostVolt 	= atof(argv[3]);
+		sApp.chargBoostCurrent 	= atof(argv[4]);
+		sApp.chargBoostTime 	= (uint32_t)(atof(argv[5]) * (float)MILLI_SEC_ON_MINUTE);
+		
+		if(strcmp(argv[6],"on") == 0) {
+			sApp.vUsb = TRUE;
+			GPIO_SET_HIGH_CTRL_VUSB_EN();
+		} else {
+			sApp.vUsb = FALSE;
+			GPIO_SET_LOW_CTRL_VUSB_EN();
+		}
+		
+		if(strcmp(argv[7],"on") == 0) {			
+			App_ClearDevState(&sApp, DS_USER_DISABLE);
+			sApp.charg = TRUE;
+		} else {
+			App_SetDevState(&sApp, DS_USER_DISABLE);
+			sApp.charg = FALSE;
+		}
+		
+		
+		if(strcmp(argv[8],"on") == 0) {
+			sApp.log = TRUE;
+			Timer_Start(sApp.hTimerGui);
+		} else {
+			sApp.log = FALSE;
+			Timer_Stop(sApp.hTimerGui);			
+		}
+		
+		LREP("***command success\r\n\r\n");
+		
+		App_ResetControl(&sApp);
+	}
+			
+}
+
 void mppt_volt(int32_t argc, char **argv) {
 	if (argc == 2)
 	{		
@@ -854,6 +905,43 @@ void cancel(int32_t argc, char **argv) {
 	LREP("discard pending command\r\n");
 }
 
+
+void set_vusbx(int32_t argc, char **argv) {
+	if (argc == 2)
+	{		
+		if (strcmp(argv[1], "1") == 0) {
+			sApp.vUsb = TRUE;
+			GPIO_SET_HIGH_CTRL_VUSB_EN();
+			LREP("***command success\r\n\r\n");
+		} else if (strcmp(argv[1], "0") == 0) {
+			sApp.vUsb = FALSE;
+			GPIO_SET_LOW_CTRL_VUSB_EN();
+			LREP("***command success\r\n\r\n");
+		} else {
+			LREP("argument not supported\r\n\n");
+		}
+		
+	}		
+}
+
+
+void set_logx(int32_t argc, char **argv) {
+	if (argc == 2)
+	{		
+		if (strcmp(argv[1], "1") == 0) {
+			sApp.log = TRUE;
+			Timer_Start(sApp.hTimerGui);
+			LREP("***command success\r\n\r\n");
+		} else if (strcmp(argv[1], "0") == 0) {
+			sApp.log = FALSE;
+			Timer_Stop(sApp.hTimerGui);	
+			LREP("***command success\r\n\r\n");
+		} else {
+			LREP("argument not supported\r\n\n");
+		}
+		
+	}	
+}
 /*****************************************************************************/
 /** @brief 
  *		   
@@ -873,63 +961,57 @@ void set_passwd(int32_t argc, char **argv) {
 			case CMD_ON_OFF_CHARGE:
 				if(sApp.cmdParam == 1) {
 					App_ClearDevState(&sApp, DS_USER_DISABLE);
-					//LREP("user enabled charger\r\n\n");
-					LREP("command success\r\n\n");
+					LREP("user enabled charger\r\n\n");			
+					sApp.charg = TRUE;
 				} else {
 					App_SetDevState(&sApp, DS_USER_DISABLE);
-					//LREP("user disabled charger\r\n\n");
-					LREP("command success\r\n\n");
+					sApp.charg = FALSE;
+					LREP("user disabled charger\r\n\n");					
 				}
 				break;
 			case CMD_ON_OFF_VUSB:
 				if(sApp.cmdParam == 1) {
 					GPIO_SET_HIGH_CTRL_VUSB_EN();
-					//LREP("user control on vusb\r\n\n");
-					LREP("command success\r\n\n");
+					LREP("user control on vusb\r\n\n");					
 					sApp.vUsb = TRUE;
 				} else {
 					GPIO_SET_LOW_CTRL_VUSB_EN();
-					//LREP("user control off vusb\r\n\n");
-					LREP("command success\r\n\n");
+					LREP("user control off vusb\r\n\n");
 					sApp.vUsb = FALSE;
 				}
 				break;
 			case CMD_SET_BOARD_ID:
 				sApp.id = (int)sApp.cmdParam;
-				//LREP("user set board id = %d\r\n\n", sApp.id);
-				LREP("command success\r\n\n");
+				LREP("user set board id = %d\r\n\n", sApp.id);				
 				break;
 			case CMD_SET_FLOAT_VOLT:				
 				sApp.chargFloatVolt = sApp.cmdParam;
-				//LREP("user set float battery voltage: %d\r\n\n", (int)sApp.chargFloatVolt);
-				LREP("command success\r\n\n");
+				LREP("user set float battery voltage: %d\r\n\n", (int)sApp.chargFloatVolt);
 				App_ResetControl(&sApp);
 				break;
 			case CMD_SET_BOOST_VOLT:
 				sApp.chargBoostVolt = sApp.cmdParam;
-				//LREP("user set boost battery voltage: %d\r\n\n", (int)sApp.chargBoostVolt);
-				LREP("command success\r\n\n");
+				LREP("user set boost battery voltage: %d\r\n\n", (int)sApp.chargBoostVolt);				
 				App_ResetControl(&sApp);
 				break;
 			case CMD_SET_CURR_MAX:
 				sApp.chargBoostCurrent = sApp.cmdParam;
-				//LREP("user set boost battery current: %d\r\n\n", (int)sApp.chargBoostCurrent);
-				LREP("command success\r\n\n");
+				LREP("user set boost battery current: %d\r\n\n", (int)sApp.chargBoostCurrent);
 				App_ResetControl(&sApp);
 				break;
 			case CMD_SET_BOOST_TIME:
-				sApp.chargBoostTime = (uint32_t)(sApp.cmdParam * (float)MILLI_SEC_ON_MINUTE);
-				LREP("command success\r\n\n");
-				//LREP("user set boost time: %d minute\r\n\n", (int)(sApp.cmdParam));
+				sApp.chargBoostTime = (uint32_t)(sApp.cmdParam * (float)MILLI_SEC_ON_MINUTE);				
+				LREP("user set boost time: %d minute\r\n\n", (int)(sApp.cmdParam));
 				App_ResetControl(&sApp);
 				break;
 			case CMD_SET_LOG_STT:
 				if(sApp.cmdParam == 0) {
 					Timer_Stop(sApp.hTimerGui);
+					sApp.log = FALSE;
 				} else {
 					Timer_Start(sApp.hTimerGui);
-				}
-				LREP("command success\r\n\n");
+					sApp.log = TRUE;
+				}				
 				break;
 				
 			case CMD_RESTART:
@@ -1012,19 +1094,27 @@ void Clb_TimerGui(uint32_t tick, void *param) {
  */
 void UART_HandleInt(UART_Type *pUART) {
 	
-	uint8_t u8Port;
-	(void)u8Port;
+	(void)pUART;
+	//uint8_t u8Port;
+	//(void)u8Port;
     volatile uint8_t read_temp = 0;
     
-    u8Port = ((uint32_t)pUART-(uint32_t)UART0)>>12;
+    //u8Port = ((uint32_t)pUART-(uint32_t)UART0)>>12;
     
     /* check overrun flag */
-    if(UART_CheckFlag(pUART,UART_FlagOR)) {
-        read_temp = UART_ReadDataReg(pUART);     
-    } else if(UART_CheckFlag(pUART, UART_FlagRDRF)) {
-    	read_temp = UART_ReadDataReg(pUART);
+    if(UART_CheckFlag(UART1,UART_FlagOR)) {
+        read_temp = UART_ReadDataReg(UART1);     
+        PushCommand(read_temp);
+    }  
+    	
+    while(UART_CheckFlag(UART1, UART_FlagRDRF)) {
+    	read_temp = UART_ReadDataReg(UART1);
     	PushCommand(read_temp);    	
     }
+        
+    
+    
+    //if(UART_IsRxBuffFull(pUART))
 }
 /*****************************************************************************/
 /** @brief 

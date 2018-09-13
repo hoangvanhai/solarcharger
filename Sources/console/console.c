@@ -82,11 +82,11 @@ void Debug_Task(void *arg) {
 			LREP(SHELL_PROMPT);		
 		} else {
 			shell_push_buffer("pass ", 5);
-			LREP("pass\r\n");
+			LREP("pass ");
 		}
 		if(err == SHELL_CMD_ERR_INVALID_SYNTAX) {
 			//LREP(SHELL_PROMPT);
-			isPwdMode = FALSE;
+			//isPwdMode = FALSE;
 		}
 	}
 }

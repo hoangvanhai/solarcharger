@@ -145,7 +145,7 @@ void BSP_InitUart(uint32_t bitrate) {
 	UART_ConfigType sConfig;
 	SIM_RemapUART1ToPTF_2_3();
     sConfig.u32SysClkHz = BUS_CLK_HZ;
-    sConfig.u32Baudrate = UART_PRINT_BITRATE;
+    sConfig.u32Baudrate =  UART_PRINT_BITRATE;
     
     UART_Init(UART1,&sConfig); 
     UART_EnableRx(UART1);
