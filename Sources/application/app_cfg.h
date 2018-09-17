@@ -39,7 +39,7 @@
 #define		BATT_BOOST_CURRENT_VALUE		(2000) 	// Ampe
 
 #define 	PANEL_VOLT_HIGH_PROTECT			(60000)	// volt
-#define 	PANEL_VOLT_LOW_PROTECT			(15000)	// milli volt
+#define 	PANEL_VOLT_LOW_PROTECT			(10000)	// milli volt
 #define		PANEL_CURR_HIGH_VALUE			(5000)	// Ampe
 
 	

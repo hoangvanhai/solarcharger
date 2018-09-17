@@ -219,7 +219,7 @@ typedef struct SApp_ {
 												FTM_SetChannelValue(FTM0, FTM_CHANNEL_CHANNEL0, (int)((float)FTM0->MOD*percen));}
 
 #define App_StartBucker(pApp)				{	\
-												pApp->currDutyPer = 0.65; 				\
+												pApp->currDutyPer = 0.15; 				\
 												App_SetDutyPercen(pApp->currDutyPer);	\
 												GPIO_SET_HIGH_CTRL_BUCK_DRV(); 			\
 												GPIO_SET_HIGH_DISP_BATT_CHARG(); 			\
@@ -230,7 +230,7 @@ typedef struct SApp_ {
 												App_SetDutyPercen((pApp)->currDutyPer);	\
 												GPIO_SET_LOW_CTRL_BUCK_DRV(); 	\
 												GPIO_SET_LOW_DISP_BATT_CHARG(); 	\
-												/*ASSERT(0);*/	\
+												ASSERT(0);	\
 											}
 
 #define App_ResetSpInfo(pApp)				{ \

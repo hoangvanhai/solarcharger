@@ -275,7 +275,7 @@ void App_Control(SApp *pApp) {
 		if(pApp->eDevState == DS_DEV_RUN) {
 			App_StartBucker(pApp);			
 			//pApp->eBuckerSM = BSM_BUCKER_STARTING;
-			pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;				
+			pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;				
 			LREP("\r\nSTART BUCKER MPPT\r\n\n");
 		}
 		
@@ -303,18 +303,20 @@ void App_Control(SApp *pApp) {
 				App_SetDutyPercen(pApp->currDutyPer);
 			} else { // is max duty				
 				// change to mppt to get const voltage
-				pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;				
+				pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;				
 				LREP("S D MAX -> MPPT d: 0.%03d v %d i %d\r\n\n", 
 						(int)(pApp->currDutyPer * 1000), 
 						(int)pApp->battVolt.realValue, 
 						(int)pApp->battCurr);
-				App_StartBucker(pApp);
+				//App_StartBucker(pApp);
 			}			
-		} else if(pApp->eDevState == (DS_DEV_RUN | DS_PANEL_VOLT_LOW)) {
+		} 
+		/*else if(pApp->eDevState == (DS_DEV_RUN | DS_PANEL_VOLT_LOW)) {
 			App_StartBucker(pApp);
 			pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;			
 			LREP("SLD->MPPT");
-		} else {			
+		} */ 
+		else {			
 			App_StopBucker(pApp);
 			pApp->eBuckerSM = BSM_BUCKER_STOP;
 		}		
@@ -348,17 +350,20 @@ void App_Control(SApp *pApp) {
 			}
 
 			// if duty is reached max 
-			if(pApp->currDutyPer >= APP_MAX_DUTY_PERCEN) {
-				App_StartBucker(pApp);
-				pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;
-				LREP("DI->MPPT ");
-			}				
+//			if(pApp->currDutyPer >= APP_MAX_DUTY_PERCEN) {
+//				App_StartBucker(pApp);
+//				pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;
+//				LREP("DI->MPPT ");
+//			}				
 			
-		} else if(pApp->eDevState == (DS_DEV_RUN | DS_PANEL_VOLT_LOW)) {
+		} 
+		/*else if(pApp->eDevState == (DS_DEV_RUN | DS_PANEL_VOLT_LOW)) {
 			App_StartBucker(pApp);
 			pApp->eBuckerSM = BSM_BUCKER_CHARG_MPPT_VOLT_CTRL;			
 			LREP("LI->MPPT ");
-		} else {					
+		}*/ 
+		else {
+			LREP("PV: %d STAT 0x%x\r\n", (int)pApp->panelVolt.realValue, (int)pApp->eDevState);
 			App_StopBucker(pApp);
 			pApp->eBuckerSM = BSM_BUCKER_STOP;
 		}
