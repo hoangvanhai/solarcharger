@@ -85,17 +85,17 @@ extern "C" {
 *//*! @addtogroup flash_error_list
 * @{
 *******************************************************************************/
-#define FLASH_ERR_BASE				0x3000										/*!< FTMRH error base */
-#define FLASH_ERR_SUCCESS			0													/*!< FTMRH sucess */
+#define FLASH_ERR_BASE				0x3000					/*!< FTMRH error base */
+#define FLASH_ERR_SUCCESS			0						/*!< FTMRH sucess */
 #define FLASH_ERR_INVALID_PARAM		(FLASH_ERR_BASE+1)		/*!<  invalid parameter error code*/
-#define EEPROM_ERR_SINGLE_BIT_FAULT	(FLASH_ERR_BASE+2)	/*!<  EEPROM single bit fault error code*/
-#define EEPROM_ERR_DOUBLE_BIT_FAULT	(FLASH_ERR_BASE+4)	/*!<  EEPROM double bits fault error code*/
-#define FLASH_ERR_ACCESS			(FLASH_ERR_BASE+8)				/*!< flash access error code*/
-#define FLASH_ERR_PROTECTION		(FLASH_ERR_BASE+0x10)		/*!<  flash protection error code*/
-#define FLASH_ERR_MGSTAT0			(FLASH_ERR_BASE+0x11)			/*!<  flash verification error code*/
-#define FLASH_ERR_MGSTAT1			(FLASH_ERR_BASE+0x12)			/*!<  flash non-correctable error code*/
-#define FLASH_ERR_INIT_CCIF			(FLASH_ERR_BASE+0x14)		/*!<  flash driver init error with CCIF = 1*/
-#define FLASH_ERR_INIT_FDIV			(FLASH_ERR_BASE+0x18)		/*!<  flash driver init error with wrong FDIV*/ 
+#define EEPROM_ERR_SINGLE_BIT_FAULT	(FLASH_ERR_BASE+2)		/*!<  EEPROM single bit fault error code*/
+#define EEPROM_ERR_DOUBLE_BIT_FAULT	(FLASH_ERR_BASE+4)		/*!<  EEPROM double bits fault error code*/
+#define FLASH_ERR_ACCESS			(FLASH_ERR_BASE+8)		/*!< flash access error code*/
+#define FLASH_ERR_PROTECTION		(FLASH_ERR_BASE+0x10)	/*!<  flash protection error code*/
+#define FLASH_ERR_MGSTAT0			(FLASH_ERR_BASE+0x11)	/*!<  flash verification error code*/
+#define FLASH_ERR_MGSTAT1			(FLASH_ERR_BASE+0x12)	/*!<  flash non-correctable error code*/
+#define FLASH_ERR_INIT_CCIF			(FLASH_ERR_BASE+0x14)	/*!<  flash driver init error with CCIF = 1*/
+#define FLASH_ERR_INIT_FDIV			(FLASH_ERR_BASE+0x18)	/*!<  flash driver init error with wrong FDIV*/ 
 /*! @} End of flash_error_list                                                */
 
 /******************************************************************************

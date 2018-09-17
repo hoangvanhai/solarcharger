@@ -33,7 +33,8 @@
 /******************************************************************************
  * Constants and macros
  ******************************************************************************/
-
+//#define SECTOR_RW_NUM			200
+//#define ADDRESS_RW				(SECTOR_RW_NUM*FLASH_SECTOR_SIZE)
 /******************************************************************************
  * Local types
  ******************************************************************************/
@@ -54,6 +55,9 @@ const char *logo_msg = { "\r\n\n"
 		" *        *        *     *     \r\n"
 		"**     *  **     * *     *      \r\n"
 		"*******  ********   ****        \r\n" };
+
+int count = 0;
+//uint8_t  u8DataBuff[512];
 /******************************************************************************
  * Global functions
  ******************************************************************************/
@@ -81,16 +85,7 @@ void Task_Gui(void *arg) {
 //			(int) (sApp.currDutyPer * 1000.0), (int) (sApp.eDevState), 
 //			(int) sApp.eBuckerSM);
 	
-	LREP("status: ID: %d ST: %d PV: %d mV PI: %d mA PP: %d mW BV: %d mV BI: %d mA\r\n",
-				(int)sApp.id,
-				(int)sApp.eBuckerSM,
-				(int)sApp.panelVolt.realValue,
-				(int)sApp.panelCurr.realValue,
-				(int)sApp.panelPower,
-				(int)sApp.battVolt.realValue,
-				(int)sApp.battCurr);
-	
-//	LREP("status: ID: %d ST: %d PV: %d PI: %d PP: %d BV: %d BI: %d\r\n\n",
+//	LREP("status: ID: %d ST: %d PV: %d mV PI: %d mA PP: %d mW BV: %d mV BI: %d mA\r\n",
 //				(int)sApp.id,
 //				(int)sApp.eBuckerSM,
 //				(int)sApp.panelVolt.realValue,
@@ -98,6 +93,15 @@ void Task_Gui(void *arg) {
 //				(int)sApp.panelPower,
 //				(int)sApp.battVolt.realValue,
 //				(int)sApp.battCurr);
+	
+	LREP("status: ID: %d ST: %d PV: %d PI: %d PP: %d BV: %d BI: %d\r\n",
+				(int)sApp.sCfg.id,
+				(int)sApp.eBuckerSM,
+				(int)sApp.panelVolt.realValue,
+				(int)sApp.panelCurr.realValue,
+				(int)sApp.panelPower,
+				(int)sApp.battVolt.realValue,
+				(int)sApp.battCurr);
 
 	
 //	LREP("status: \r\nID: %d \r\nST: %d\r\n PV: %d mV\r\nPI: %d mA\r\nPP: %d mW\r\nBV: %d mV\r\nBI: %d mA\r\n",
@@ -110,20 +114,36 @@ void Task_Gui(void *arg) {
 //				(int)sApp.battCurr);
 	
 //	LREP("pass\r\n\n");
+
 	
 }
 
+
+#if 1
 int main(void) {
+	int16_t err;
+	WDOG_ConfigType sWDOGConfig = {0};   
+	
 	BSP_Init();
-	App_Init(&sApp);
+	
 	LREP(logo_msg);
 	LREP("SOLAR CHARGER APPLICATION STARTED\r\nbuilt time " __TIME__ " " __DATE__ "\r\n\n");
+		
+	err = FLASH_Init(BUS_CLK_HZ);
+	if(err != 0) {
+		LREP("Init error 0x%x\r\n\n", err);
+	}
+	
+	
+	
+	App_Init(&sApp);
+			
 	shell_init(cmd_table, my_shell_init);
 
 	task_init();
 	sApp.task_shell = task_create(Debug_Task,	// task function 
-			NULL, 		// parameter
-			TRUE);		// always run
+									NULL, 		// parameter
+									TRUE);		// always run
 
 	sApp.task_control = task_create(Task_Control, NULL, FALSE);
 	sApp.task_gui = task_create(Task_Gui, NULL, FALSE);
@@ -133,9 +153,55 @@ int main(void) {
 	LREP("firmware version %s\r\n", APP_FIRMWARE_VER);
 	LREP("initilized done \r\n\n");
 	LREP("type \"help\" to show support command\r\n\n");
+	
+    
+    
+#ifdef TEST_FLASH
+    if(*((uint8_t *)ADDRESS_RW) != (uint8_t)0x55) {
+		err = FLASH_EraseSector(ADDRESS_RW);
+		LREP("erase return 0x%x\r\n\n", err);
+		
+		for(i = 0; i < 512; i++)
+		{
+			u8DataBuff[i] = (uint8_t)(i + 1);
+			//printf("0x%x,", (int)i);
+		}
+		
+		u8DataBuff[0] = 0x55;
+		
+		LREP("\r\n\n");
+		
+		/* write data to erased sector */
+		FLASH_Program(ADDRESS_RW, 	&u8DataBuff[0],	512 );    
+		
+		LREP("flash return 0x%x\r\n\n", err);
+		
+		
+		for(i = 0; i < 512; i++ )
+		{
+			printf("0x%x,",*((uint8_t *)(i + ADDRESS_RW)));    	
+		}
+    }
+#endif
+	
 
-	LREP(SHELL_PROMPT);
-
+    sWDOGConfig.sBits.bWaitEnable   = TRUE;
+    sWDOGConfig.sBits.bStopEnable   = TRUE;
+    sWDOGConfig.sBits.bDbgEnable    = TRUE;
+    sWDOGConfig.sBits.bUpdateEnable = FALSE;
+    sWDOGConfig.sBits.bDisable      = FALSE;        /* enable WDOG */
+    sWDOGConfig.sBits.bClkSrc       = WDOG_CLK_INTERNAL_1KHZ;
+    sWDOGConfig.u16TimeOut          = 1000;  /*< 1s */
+    sWDOGConfig.u16WinTime          = 0; 
+    
+    WDOG_Init(&sWDOGConfig);
+    
+    if(WDOG_IsReset()) {
+    	LREP("WDG reseted \r\n\n");
+    }
+    
+    LREP(SHELL_PROMPT);
+    
 	while (1) {
 
 #if APP_PROCESS_METHOD == APP_PROCESS_IN_BGND
@@ -161,7 +227,64 @@ int main(void) {
 			}
 		}
 #endif        
-		task_main_exec();
+		task_main_exec();		
+		WDOG_Feed();		
 	}
 }
+
+#endif
+
+
+
+
+
+
+#if 0
+int main (void)
+{
+	char ch;  
+    uint32_t i;
+    uint16_t err = 0;
+    uint8_t  u8DataBuff[512];
+
+    BSP_Init();
+//    
+  	printf("\nRunning the Flash_demo project.\r\n\n");
+    LED0_Init();  
+    LED2_Init();
+    FLASH_Init(BUS_CLK_HZ);
+    
+    /* Erase 99th sector */
+    err = FLASH_EraseSector(ADDRESS_RW);
+    LREP("erase return 0x%x\r\n\n", err);
+    
+    for(i = 0; i < 512; i++)
+    {
+        u8DataBuff[i] = (uint8_t)(i + 1);
+        printf("0x%x,", (int)i);
+    }
+    
+    LREP("\r\n\n");
+    
+    /* write data to erased sector */
+    FLASH_Program(ADDRESS_RW, 	&u8DataBuff[0],	512 );    
+    
+    LREP("flash return 0x%x\r\n\n", err);
+    
+  	
+    for(i = 0; i < 512; i++ )
+	{
+    	printf("0x%x,",*((uint8_t *)(i + ADDRESS_RW)));
+    	//printf("0x%x,", u8DataBuff[i]);
+	}
+
+    while(1)
+	{
+		ch = in_char();
+		out_char(ch);
+	
+	} 
+}
+#endif
+
 

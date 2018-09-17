@@ -26,7 +26,8 @@
 #include <led.h>
 #include <utils.h>
 /************************** Constant Definitions *****************************/
-
+#define SECTOR_RW_NUM			200
+#define ADDRESS_RW				(SECTOR_RW_NUM*FLASH_SECTOR_SIZE)
 /**************************** Type Definitions *******************************/
 
 /***************** Macros (Inline Functions) Definitions *********************/
@@ -58,6 +59,7 @@ void set_log(int32_t argc, char **argv);
 void get_setting(int32_t argc, char **argv);
 void set_config(int32_t argc, char **argv);
 void set_vusbx(int32_t argc, char **argv);
+void reset_flash(int32_t argc, char **argv);
 void set_logx(int32_t argc, char **argv);
 void cancel(int32_t argc, char **argv);
 void mppt_volt(int32_t argc, char **argv);
@@ -65,6 +67,7 @@ void mppt_volt(int32_t argc, char **argv);
 
 /************************** Variable Definitions *****************************/
 SApp sApp;
+uint8_t  u8DataBuff[256];
 
 const shell_command_t cmd_table[] =
 {
@@ -82,10 +85,10 @@ const shell_command_t cmd_table[] =
 	{"sinfo", 	0u, 0u, get_info, 		"show board info", ""},
 	{"log", 	1u, 1u, set_log, 		"continuous log board status", "<on|off>"},	
 	{"scfg", 	0u, 0u, get_setting, 	"show board setting", ""},
-	{"config", 	8u, 8u, set_config, 	"reserved", ""},
-	{"lx", 	1u, 1u, set_logx, 			"reserved", ""},
-	{"vx", 	1u, 1u, set_vusbx, 			"reserved", ""},
-	/*{"mppt", 	1u, 1u, mppt_volt, 		"set mppt volt", ""},
+	{"rst", 	1u, 1u, reset_flash, 	"reserved", ""},
+	/*{"config", 	8u, 8u, set_config, 	"reserved", ""},
+	{"lx", 	1u, 1u, set_logx, 			"reserved", ""},	
+	{"mppt", 	1u, 1u, mppt_volt, 		"set mppt volt", ""},
 	{"cancel", 	0u, 0u, cancel, 		"discard pending command", ""},*/	
 	{0, 0u, 0u, 0, 0, 0}
 };
@@ -108,6 +111,9 @@ const char *status[]  = {
  *  @note
  */
 void App_Init(SApp *pApp) {	
+	
+	SConfig cfg = {0};
+	
 	Timer_Init();
 	
 	pApp->hTimerUpdate = Timer_Create(Clb_TimerUpdate, NULL);
@@ -127,17 +133,10 @@ void App_Init(SApp *pApp) {
 	
 	pApp->eBuckerSM = BSM_BUCKER_STOP;		
 	pApp->currDutyPer = 0;
-	pApp->id = APP_DEVICE_ID_DEFAULT;
+	pApp->sCfg.id = APP_DEVICE_ID_DEFAULT;
 	
 	MPPT_PNO_F_init(&pApp->sMppt);
-	
-//    PID_Init(&pApp->sPid, 
-//    		BUCKER_Kp, 
-//    		BUCKER_Ki, 
-//    		BUCKER_Kd, 
-//    		PID_UPDATE_FREQ,
-//            KP_A_COEFF, KP_B_COEFF);
-	
+
 	// init input caclculating
 	Adc_InitValue(pApp->battVolt,                   /* adc node */
 				  0,                                /* type adc node 1 avg 0 filter  */
@@ -176,16 +175,23 @@ void App_Init(SApp *pApp) {
 	pApp->panelPower 				= 0;
 	
 	// init control value 
-	pApp->chargBoostTime 			= APP_CHARGE_CONST_VOLT_TIME;
-	pApp->chargBoostCurrent 		= BATT_BOOST_CURRENT_VALUE;
-	pApp->chargBoostVolt 			= BATT_BOOST_VOLT_VALUE;
-	pApp->chargFloatVolt			= BATT_FLOAT_VOLT_VALUE;
-	pApp->vUsb						= TRUE;
-	pApp->charg						= TRUE;
-	pApp->log						= FALSE;
-	pApp->downRate					= 0;
+	pApp->sCfg.chargBoostTime 			= APP_CHARGE_CONST_VOLT_TIME;
+	pApp->sCfg.chargBoostCurrent 		= BATT_BOOST_CURRENT_VALUE;
+	pApp->sCfg.chargBoostVolt 			= BATT_BOOST_VOLT_VALUE;
+	pApp->sCfg.chargFloatVolt			= BATT_FLOAT_VOLT_VALUE;
+	pApp->sCfg.vUsb						= TRUE;
+	pApp->sCfg.charg					= TRUE;
+	pApp->sCfg.log						= FALSE;
+	pApp->downRate						= 0;
 	
-	//Timer_Start(pApp->hTimerGui);
+
+	if(*((uint8_t *)ADDRESS_RW) == (uint8_t)0x55) {
+		App_LoadConfig(&cfg);
+	}
+	
+	if(pApp->sCfg.log > 0) {
+		Timer_Start(pApp->hTimerGui);
+	}
 #if APP_PROCESS_METHOD == APP_PROCESS_IN_BGND
 	Timer_Start(pApp->hTimerUpdate);
 #endif
@@ -246,7 +252,7 @@ void App_Control(SApp *pApp) {
 			GPIO_SET_LOW_DISP_BATT_FULL();
 		}	
 	} else if (pApp->battVolt.realValue >= BATT_EMPTY_VOLT_VALUE && 
-			pApp->battVolt.realValue < pApp->chargBoostVolt) {
+			pApp->battVolt.realValue < pApp->sCfg.chargBoostVolt) {
 				
 		if(pApp->eDevState & DS_BATT_VOLT_EMPTY) {
 			App_ClearDevState(pApp, DS_BATT_VOLT_EMPTY);
@@ -277,17 +283,17 @@ void App_Control(SApp *pApp) {
 	case BSM_BUCKER_STARTING:
 		if(pApp->eDevState == DS_DEV_RUN) {
 			// if max current is reached
-			if(sApp.battCurr >= pApp->chargBoostCurrent) {
+			if(sApp.battCurr >= pApp->sCfg.chargBoostCurrent) {
 				// change to const current phase
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
 				LREP("S I MAX -> CONST I\r\n\n");
 			}
 
-			if(pApp->battVolt.realValue >= pApp->chargBoostVolt) {
+			if(pApp->battVolt.realValue >= pApp->sCfg.chargBoostVolt) {
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_VOLT_MAX;
 				Timer_Stop(pApp->hTimerControl);
-				Timer_StartAt(pApp->hTimerControl, pApp->chargBoostTime);
-				LREP("S V MAX -> CONST V %d\r\n\n", (int)pApp->chargBoostTime);
+				Timer_StartAt(pApp->hTimerControl, pApp->sCfg.chargBoostTime);
+				LREP("S V MAX -> CONST V %d\r\n\n", (int)pApp->sCfg.chargBoostTime);
 			}
 			
 			// if duty is not reached max 
@@ -319,14 +325,14 @@ void App_Control(SApp *pApp) {
 		if(pApp->eDevState == DS_DEV_RUN) {
 
 			#if BUCKER_CONTROL_METHOD == CONTROL_THRESHOLD
-			diffval = (pApp->battCurr - pApp->chargBoostCurrent);			
+			diffval = (pApp->battCurr - pApp->sCfg.chargBoostCurrent);			
 			if(ABS(diffval) > APP_CONTROL_OFFSET_VALUE) {
 				// if max current is reached
-				if(pApp->battCurr > pApp->chargBoostCurrent) {
+				if(pApp->battCurr > pApp->sCfg.chargBoostCurrent) {
 					pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer < 0) pApp->currDutyPer = 0;
 					App_SetDutyPercen(pApp->currDutyPer);
-				} else if(sApp.battCurr < pApp->chargBoostCurrent){
+				} else if(sApp.battCurr < pApp->sCfg.chargBoostCurrent){
 					pApp->currDutyPer += APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer > APP_MAX_DUTY_PERCEN) pApp->currDutyPer = APP_MAX_DUTY_PERCEN;
 					App_SetDutyPercen(pApp->currDutyPer);
@@ -335,9 +341,9 @@ void App_Control(SApp *pApp) {
 			}						
 			#endif
 			
-			if(pApp->battVolt.realValue >= pApp->chargBoostVolt) {
+			if(pApp->battVolt.realValue >= pApp->sCfg.chargBoostVolt) {
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_VOLT_MAX;
-				Timer_StartAt(pApp->hTimerControl, pApp->chargBoostTime);
+				Timer_StartAt(pApp->hTimerControl, pApp->sCfg.chargBoostTime);
 				LREP("I ->V ");
 			}
 
@@ -384,14 +390,14 @@ void App_Control(SApp *pApp) {
 				}			
 				#endif
 				
-				if(pApp->battVolt.realValue >= pApp->chargBoostVolt) {
+				if(pApp->battVolt.realValue >= pApp->sCfg.chargBoostVolt) {
 					pApp->eBuckerSM = BSM_BUCKER_CHARG_VOLT_MAX;
 					Timer_Stop(pApp->hTimerControl);
-					Timer_StartAt(pApp->hTimerControl, pApp->chargBoostTime);
+					Timer_StartAt(pApp->hTimerControl, pApp->sCfg.chargBoostTime);
 					LREP("MPPT->V ");
 				}
 				
-				if(sApp.battCurr >= pApp->chargBoostCurrent) {
+				if(sApp.battCurr >= pApp->sCfg.chargBoostCurrent) {
 					// change to const current phase
 					pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
 					LREP("MPPT->I ");				
@@ -407,20 +413,20 @@ void App_Control(SApp *pApp) {
 	case BSM_BUCKER_CHARG_VOLT_MAX:
 		if(pApp->eDevState == DS_DEV_RUN) {		
 		#if BUCKER_CONTROL_METHOD == CONTROL_THRESHOLD
-			diffval = (pApp->battVolt.realValue - pApp->chargBoostVolt);
+			diffval = (pApp->battVolt.realValue - pApp->sCfg.chargBoostVolt);
 			if(ABS(diffval) > APP_CONTROL_OFFSET_VALUE) {
-				if(sApp.battVolt.realValue > pApp->chargBoostVolt) {
+				if(sApp.battVolt.realValue > pApp->sCfg.chargBoostVolt) {
 					pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer < 0) pApp->currDutyPer = 0;
 					App_SetDutyPercen(pApp->currDutyPer);
-				} else if(pApp->battVolt.realValue < pApp->chargBoostVolt){
+				} else if(pApp->battVolt.realValue < pApp->sCfg.chargBoostVolt){
 					pApp->currDutyPer += APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer > APP_MAX_DUTY_PERCEN) pApp->currDutyPer = APP_MAX_DUTY_PERCEN;
 					App_SetDutyPercen(pApp->currDutyPer);
 				}				
 			}
 			
-			if(sApp.battCurr >= pApp->chargBoostCurrent) {
+			if(sApp.battCurr >= pApp->sCfg.chargBoostCurrent) {
 				pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
 				LREP("V->I ");				
 			}
@@ -436,13 +442,13 @@ void App_Control(SApp *pApp) {
 		
 		if(pApp->eDevState == DS_DEV_RUN) {		
 		#if BUCKER_CONTROL_METHOD == CONTROL_THRESHOLD
-			diffval = (pApp->battVolt.realValue - pApp->chargFloatVolt);
+			diffval = (pApp->battVolt.realValue - pApp->sCfg.chargFloatVolt);
 			if(ABS(diffval) > APP_CONTROL_OFFSET_VALUE) {
-				if(sApp.battVolt.realValue > pApp->chargFloatVolt) {
+				if(sApp.battVolt.realValue > pApp->sCfg.chargFloatVolt) {
 					pApp->currDutyPer -= APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer < 0) pApp->currDutyPer = 0;
 					App_SetDutyPercen(pApp->currDutyPer);
-				} else if(pApp->battVolt.realValue < pApp->chargFloatVolt){
+				} else if(pApp->battVolt.realValue < pApp->sCfg.chargFloatVolt){
 					pApp->currDutyPer += APP_STEP_DUTY_PERCEN;
 					if(pApp->currDutyPer > APP_MAX_DUTY_PERCEN) pApp->currDutyPer = APP_MAX_DUTY_PERCEN;
 					App_SetDutyPercen(pApp->currDutyPer);
@@ -450,7 +456,7 @@ void App_Control(SApp *pApp) {
 				//pApp->battLastVolt = pApp->battVolt.realValue;
 			}
 			
-			if(sApp.battCurr >= pApp->chargBoostCurrent) {
+			if(sApp.battCurr >= pApp->sCfg.chargBoostCurrent) {
 				// change to const current phase
 				//pApp->eBuckerSM = BSM_BUCKER_CHARG_CONST_CURR;
 				LREP("FV->I ");					
@@ -647,7 +653,7 @@ void set_duty_cmd(int32_t argc, char **argv) {
 void get_info(int32_t argc, char **argv) {	
 
 	LREP("status:\r\n ID: %d\r\n PV: %d mV\r\n PI: %d mA\r\n PP: %d mW\r\n BV: %d mV\r\n BI: %d mA\r\n\n",
-			(int)sApp.id,
+			(int)sApp.sCfg.id,
 			(int)sApp.panelVolt.realValue,
 			(int)sApp.panelCurr.realValue,
 			(int)sApp.panelPower,
@@ -729,7 +735,7 @@ void set_float_volt(int32_t argc, char **argv) {
 			isPwdMode = TRUE;
 		} else {
 			LREP("invalid value: %d, should be > 5000 && < boost volt = %d\r\n", 
-					(int)cont, (int)sApp.chargBoostVolt);
+					(int)cont, (int)sApp.sCfg.chargBoostVolt);
 		}
 	}
 }
@@ -746,13 +752,13 @@ void set_boost_volt(int32_t argc, char **argv) {
 	if (argc == 2)
 	{		
 		float cont = atof(argv[1]);
-		if(cont > sApp.chargFloatVolt) {
+		if(cont > sApp.sCfg.chargFloatVolt) {
 			sApp.eDevPendCmd = CMD_SET_BOOST_VOLT;
 			sApp.cmdParam = cont;
 			isPwdMode = TRUE;
 		} else {
 			LREP("invalid value: %d, should be > float volt = %d\r\n", 
-					(int)cont, (int)sApp.chargFloatVolt);
+					(int)cont, (int)sApp.sCfg.chargFloatVolt);
 		}
 	}
 }
@@ -829,15 +835,15 @@ void set_log(int32_t argc, char **argv) {
 void get_setting(int32_t argc, char **argv) {
 	
 	char *stt = (sApp.eDevState & DS_USER_DISABLE) == 0 ? "on" : "off";
-	char *usb = sApp.vUsb == 0 ? "off" : "on";
+	char *usb = sApp.sCfg.vUsb == 0 ? "off" : "on";
 	
 	LREP("show config:\r\n bid: %d\r\n charg: %s\r\n bvolt: %d mV\r\n btime: %d min\r\n fvolt: %d mV\r\n bcurr: %d mA\r\n vusb: %s\r\n\n",			
-			(int)sApp.id,
+			(int)sApp.sCfg.id,
 			stt,
-			(int)sApp.chargBoostVolt,
-			(int)(sApp.chargBoostTime / MILLI_SEC_ON_MINUTE),
-			(int)sApp.chargFloatVolt,
-			(int)sApp.chargBoostCurrent,
+			(int)sApp.sCfg.chargBoostVolt,
+			(int)(sApp.sCfg.chargBoostTime / MILLI_SEC_ON_MINUTE),
+			(int)sApp.sCfg.chargFloatVolt,
+			(int)sApp.sCfg.chargBoostCurrent,
 			usb);
 			
 }
@@ -847,34 +853,34 @@ void set_config(int32_t argc, char **argv) {
 	
 	if (argc == 9)
 	{		
-		sApp.id 				= atoi(argv[1]);
-		sApp.chargFloatVolt 	= atof(argv[2]);
-		sApp.chargBoostVolt 	= atof(argv[3]);
-		sApp.chargBoostCurrent 	= atof(argv[4]);
-		sApp.chargBoostTime 	= (uint32_t)(atof(argv[5]) * (float)MILLI_SEC_ON_MINUTE);
+		sApp.sCfg.id 				= atoi(argv[1]);
+		sApp.sCfg.chargFloatVolt 	= atof(argv[2]);
+		sApp.sCfg.chargBoostVolt 	= atof(argv[3]);
+		sApp.sCfg.chargBoostCurrent = atof(argv[4]);
+		sApp.sCfg.chargBoostTime 	= (uint32_t)(atof(argv[5]) * (float)MILLI_SEC_ON_MINUTE);
 		
 		if(strcmp(argv[6],"on") == 0) {
-			sApp.vUsb = TRUE;
+			sApp.sCfg.vUsb = TRUE;
 			GPIO_SET_HIGH_CTRL_VUSB_EN();
 		} else {
-			sApp.vUsb = FALSE;
+			sApp.sCfg.vUsb = FALSE;
 			GPIO_SET_LOW_CTRL_VUSB_EN();
 		}
 		
 		if(strcmp(argv[7],"on") == 0) {			
 			App_ClearDevState(&sApp, DS_USER_DISABLE);
-			sApp.charg = TRUE;
+			sApp.sCfg.charg = TRUE;
 		} else {
 			App_SetDevState(&sApp, DS_USER_DISABLE);
-			sApp.charg = FALSE;
+			sApp.sCfg.charg = FALSE;
 		}
 		
 		
 		if(strcmp(argv[8],"on") == 0) {
-			sApp.log = TRUE;
+			sApp.sCfg.log = TRUE;
 			Timer_Start(sApp.hTimerGui);
 		} else {
-			sApp.log = FALSE;
+			sApp.sCfg.log = FALSE;
 			Timer_Stop(sApp.hTimerGui);			
 		}
 		
@@ -910,11 +916,11 @@ void set_vusbx(int32_t argc, char **argv) {
 	if (argc == 2)
 	{		
 		if (strcmp(argv[1], "1") == 0) {
-			sApp.vUsb = TRUE;
+			sApp.sCfg.vUsb = TRUE;
 			GPIO_SET_HIGH_CTRL_VUSB_EN();
 			LREP("***command success\r\n\r\n");
 		} else if (strcmp(argv[1], "0") == 0) {
-			sApp.vUsb = FALSE;
+			sApp.sCfg.vUsb = FALSE;
 			GPIO_SET_LOW_CTRL_VUSB_EN();
 			LREP("***command success\r\n\r\n");
 		} else {
@@ -929,11 +935,11 @@ void set_logx(int32_t argc, char **argv) {
 	if (argc == 2)
 	{		
 		if (strcmp(argv[1], "1") == 0) {
-			sApp.log = TRUE;
+			sApp.sCfg.log = TRUE;
 			Timer_Start(sApp.hTimerGui);
 			LREP("***command success\r\n\r\n");
 		} else if (strcmp(argv[1], "0") == 0) {
-			sApp.log = FALSE;
+			sApp.sCfg.log = FALSE;
 			Timer_Stop(sApp.hTimerGui);	
 			LREP("***command success\r\n\r\n");
 		} else {
@@ -942,6 +948,19 @@ void set_logx(int32_t argc, char **argv) {
 		
 	}	
 }
+
+
+void reset_flash(int32_t argc, char **argv) {
+	if (argc == 2)
+	{		
+		if (strcmp(argv[1], "1") == 0) {
+			int err;
+			err = FLASH_EraseSector(ADDRESS_RW);
+			LREP("erase return 0x%x\r\n\n", err);			
+		}		
+	}	
+}
+
 /*****************************************************************************/
 /** @brief 
  *		   
@@ -962,56 +981,64 @@ void set_passwd(int32_t argc, char **argv) {
 				if(sApp.cmdParam == 1) {
 					App_ClearDevState(&sApp, DS_USER_DISABLE);
 					LREP("user enabled charger\r\n\n");			
-					sApp.charg = TRUE;
+					sApp.sCfg.charg = TRUE;
 				} else {
 					App_SetDevState(&sApp, DS_USER_DISABLE);
-					sApp.charg = FALSE;
+					sApp.sCfg.charg = FALSE;
 					LREP("user disabled charger\r\n\n");					
 				}
+				App_SaveConfig(&sApp.sCfg);
 				break;
 			case CMD_ON_OFF_VUSB:
 				if(sApp.cmdParam == 1) {
 					GPIO_SET_HIGH_CTRL_VUSB_EN();
 					LREP("user control on vusb\r\n\n");					
-					sApp.vUsb = TRUE;
+					sApp.sCfg.vUsb = TRUE;
 				} else {
 					GPIO_SET_LOW_CTRL_VUSB_EN();
 					LREP("user control off vusb\r\n\n");
-					sApp.vUsb = FALSE;
+					sApp.sCfg.vUsb = FALSE;
 				}
+				App_SaveConfig(&sApp.sCfg);
 				break;
 			case CMD_SET_BOARD_ID:
-				sApp.id = (int)sApp.cmdParam;
-				LREP("user set board id = %d\r\n\n", sApp.id);				
+				sApp.sCfg.id = (int)sApp.cmdParam;
+				LREP("user set board id = %d\r\n\n", sApp.sCfg.id);	
+				App_SaveConfig(&sApp.sCfg);
 				break;
 			case CMD_SET_FLOAT_VOLT:				
-				sApp.chargFloatVolt = sApp.cmdParam;
-				LREP("user set float battery voltage: %d\r\n\n", (int)sApp.chargFloatVolt);
+				sApp.sCfg.chargFloatVolt = sApp.cmdParam;
+				LREP("user set float battery voltage: %d\r\n\n", (int)sApp.sCfg.chargFloatVolt);
 				App_ResetControl(&sApp);
+				App_SaveConfig(&sApp.sCfg);
 				break;
 			case CMD_SET_BOOST_VOLT:
-				sApp.chargBoostVolt = sApp.cmdParam;
-				LREP("user set boost battery voltage: %d\r\n\n", (int)sApp.chargBoostVolt);				
+				sApp.sCfg.chargBoostVolt = sApp.cmdParam;
+				LREP("user set boost battery voltage: %d\r\n\n", (int)sApp.sCfg.chargBoostVolt);				
 				App_ResetControl(&sApp);
+				App_SaveConfig(&sApp.sCfg);
 				break;
 			case CMD_SET_CURR_MAX:
-				sApp.chargBoostCurrent = sApp.cmdParam;
-				LREP("user set boost battery current: %d\r\n\n", (int)sApp.chargBoostCurrent);
+				sApp.sCfg.chargBoostCurrent = sApp.cmdParam;
+				LREP("user set boost battery current: %d\r\n\n", (int)sApp.sCfg.chargBoostCurrent);
 				App_ResetControl(&sApp);
+				App_SaveConfig(&sApp.sCfg);
 				break;
 			case CMD_SET_BOOST_TIME:
-				sApp.chargBoostTime = (uint32_t)(sApp.cmdParam * (float)MILLI_SEC_ON_MINUTE);				
+				sApp.sCfg.chargBoostTime = (uint32_t)(sApp.cmdParam * (float)MILLI_SEC_ON_MINUTE);				
 				LREP("user set boost time: %d minute\r\n\n", (int)(sApp.cmdParam));
 				App_ResetControl(&sApp);
+				App_SaveConfig(&sApp.sCfg);
 				break;
 			case CMD_SET_LOG_STT:
 				if(sApp.cmdParam == 0) {
 					Timer_Stop(sApp.hTimerGui);
-					sApp.log = FALSE;
+					sApp.sCfg.log = FALSE;
 				} else {
 					Timer_Start(sApp.hTimerGui);
-					sApp.log = TRUE;
-				}				
+					sApp.sCfg.log = TRUE;
+				}		
+				App_SaveConfig(&sApp.sCfg);
 				break;
 				
 			case CMD_RESTART:
@@ -1059,6 +1086,7 @@ void Clb_TimerControl(uint32_t tick, void *param) {
 	if(sApp.eBuckerSM == BSM_BUCKER_IDLE) {
 		LREP("\r\nSet bucker to stop\r\n");
 		sApp.eBuckerSM = BSM_BUCKER_STOP;
+		GPIO_SET_LOW_DISP_BATT_FULL();
 	}
 	
 	
@@ -1102,14 +1130,14 @@ void UART_HandleInt(UART_Type *pUART) {
     //u8Port = ((uint32_t)pUART-(uint32_t)UART0)>>12;
     
     /* check overrun flag */
-    if(UART_CheckFlag(UART1,UART_FlagOR)) {
-        read_temp = UART_ReadDataReg(UART1);     
-        PushCommand(read_temp);
-    }  
-    	
-    while(UART_CheckFlag(UART1, UART_FlagRDRF)) {
-    	read_temp = UART_ReadDataReg(UART1);
-    	PushCommand(read_temp);    	
+    if(UART_CheckFlag(pUART,UART_FlagOR)) {
+        read_temp = UART_ReadDataReg(pUART);
+        if(pUART == UART1)
+        	PushCommand(read_temp);
+    }  else if (UART_CheckFlag(pUART, UART_FlagRDRF)) {
+    	read_temp = UART_ReadDataReg(pUART);
+    	if(pUART == UART1)
+    		PushCommand(read_temp);    	
     }
         
     
@@ -1162,6 +1190,7 @@ void PIT0_HandleInt(void) {
 			LREP("BI %d\r\n\n", (int)sApp.battCurrAvg);
 			sApp.eBuckerSM = BSM_BUCKER_IDLE;
 			App_StopBucker(&sApp);
+			GPIO_SET_LOW_DISP_BATT_FULL();
 			Timer_StartAt(sApp.hTimerControl, BATT_DETECT_REM_WAIT_TIME);		
 		}	    
 		sApp.downRate = 6000;
@@ -1241,4 +1270,105 @@ void ADC_HandleInt(void) {
     	//GPIO_SET_LOW_DISP_BATT_FULL();
     }
 }
+
+
+
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
+void App_LoadConfig(SConfig *pHandle) {
+	
+	SConfig cfg;
+	
+	uint32_t idx = 0;
+	for(idx = 0; idx < sizeof(SConfig); idx++) {
+		u8DataBuff[idx] = *((uint8_t *)(idx + 1 + ADDRESS_RW));
+	}
+	
+	memcpy((uint8_t*)(&cfg), u8DataBuff, sizeof(SConfig));
+	
+	
+	sApp.sCfg.id 				= cfg.id;
+	sApp.sCfg.vUsb 				= cfg.vUsb;
+	sApp.sCfg.log 				= cfg.log;
+	sApp.sCfg.charg 			= cfg.charg;
+	sApp.sCfg.chargBoostTime 	= cfg.chargBoostTime;
+	sApp.sCfg.chargBoostCurrent = cfg.chargBoostCurrent;
+	sApp.sCfg.chargBoostVolt 	= cfg.chargBoostVolt;
+	sApp.sCfg.chargFloatVolt 	= cfg.chargFloatVolt;
+	
+	/*
+	LREP("load cfg: id: %d - vusb: %d - log: %d - charg: %d - "
+			"btime: %d - bcurr: %d - bvolt: %d - fvolt: %d\r\n", 				
+			(int)sApp.sCfg.id,
+			(int)sApp.sCfg.vUsb,
+			(int)sApp.sCfg.log,
+			(int)sApp.sCfg.charg,
+			(int)(sApp.sCfg.chargBoostTime),
+			(int)sApp.sCfg.chargBoostCurrent,
+			(int)sApp.sCfg.chargBoostVolt,
+			(int)sApp.sCfg.chargFloatVolt);
+	 */
+}
+
+
+/*****************************************************************************/
+/** @brief 
+ *		   
+ *
+ *  @param
+ *  @return Void.
+ *  @note
+ */
+uint16_t App_SaveConfig(SConfig *pHandle) {
+	uint16_t err = 0;
+	uint32_t i, max_try = 4;
+	uint8_t *data = (uint8_t*)pHandle;
+	uint16_t size = sizeof(SConfig);
+	//LREP("size cfg = %d\r\n\n", size);
+	err = FLASH_EraseSector(ADDRESS_RW);
+	
+	if(err != 0) {
+		LREP("erase return 0x%x\r\n\n", err);		
+	}
+	
+	for(i = 1; i < size + 1 ; i++) {
+		u8DataBuff[i] = *((uint8_t*)(data+i-1));	
+	}
+	
+	u8DataBuff[0] = 0x55;
+	err = 0;
+	
+	err = FLASH_Program(ADDRESS_RW, &u8DataBuff[0],	size + 1);
+	err = FLASH_Program(ADDRESS_RW, &u8DataBuff[0],	size + 1);
+	
+//	do {
+//		err = FLASH_Program(ADDRESS_RW, &u8DataBuff[0],	size + 1);
+//		//LREP("retry ... \r\n\n");
+//		max_try--;
+//	} while(err != 0 && max_try > 0);
+	    	
+	if(err != 0) {
+		LREP("program return 0x%x\r\n\n", err);
+	}
+	
+	return err;
+	
+}
+
+
+
+
+
+
+
+
+
+
+
 

@@ -76,8 +76,18 @@ typedef struct SAdcValue_{
 }SAdcValue;
 
 
-typedef struct SApp_ {
+typedef struct SConfig_ {
 	uint8_t			id;
+	uint8_t			vUsb;
+	uint8_t			log;
+	uint8_t			charg;
+	uint32_t		chargBoostTime;
+	float			chargBoostCurrent;
+	float			chargBoostVolt;
+	float			chargFloatVolt;	
+}SConfig;
+
+typedef struct SApp_ {	
 	// state
 	EDeviceState	eDevState;
 	EBuckerSM		eBuckerSM;
@@ -113,18 +123,11 @@ typedef struct SApp_ {
 	float			currDutyPer;
 	
 	// setting
-	float			chargBoostCurrent;
-	float			chargBoostVolt;
-	float			chargFloatVolt;
-	uint32_t		chargBoostTime;
-	uint8_t			vUsb;
-	uint8_t			log;
-	uint8_t			charg;
+	SConfig			sCfg;
 	
 	EDevCmd			eDevPendCmd;
 	float			cmdParam;
-	int16_t			downRate;	
-	
+	int16_t			downRate;		
 }SApp;
 
 
@@ -255,6 +258,8 @@ typedef struct SApp_ {
 void App_Init(SApp *pApp);
 void App_Control(SApp *pApp);
 void App_ProcessInput(SApp *pApp);
+void App_LoadConfig(SConfig *pHandle);
+uint16_t App_SaveConfig(SConfig *pHandle);
 
 
 void my_shell_init();
