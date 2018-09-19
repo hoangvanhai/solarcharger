@@ -145,16 +145,16 @@ int main(void) {
 									NULL, 		// parameter
 									TRUE);		// always run
 
-	sApp.task_control = task_create(Task_Control, NULL, FALSE);
+	//sApp.task_control = task_create(Task_Control, NULL, FALSE);
 	sApp.task_gui = task_create(Task_Gui, NULL, FALSE);
-
-	ASSERT(sApp.task_control != NULL); ASSERT(sApp.task_shell != NULL);
+	sApp.task_trans = task_create(Trans_Task, &sApp.sTransObj, TRUE);
+	
+	ASSERT(sApp.task_trans != NULL); ASSERT(sApp.task_shell != NULL);
 
 	LREP("firmware version %s\r\n", APP_FIRMWARE_VER);
 	LREP("initilized done \r\n\n");
 	LREP("type \"help\" to show support command\r\n\n");
-	
-    
+	    
     
 #ifdef TEST_FLASH
     if(*((uint8_t *)ADDRESS_RW) != (uint8_t)0x55) {
@@ -234,57 +234,5 @@ int main(void) {
 
 #endif
 
-
-
-
-
-
-#if 0
-int main (void)
-{
-	char ch;  
-    uint32_t i;
-    uint16_t err = 0;
-    uint8_t  u8DataBuff[512];
-
-    BSP_Init();
-//    
-  	printf("\nRunning the Flash_demo project.\r\n\n");
-    LED0_Init();  
-    LED2_Init();
-    FLASH_Init(BUS_CLK_HZ);
-    
-    /* Erase 99th sector */
-    err = FLASH_EraseSector(ADDRESS_RW);
-    LREP("erase return 0x%x\r\n\n", err);
-    
-    for(i = 0; i < 512; i++)
-    {
-        u8DataBuff[i] = (uint8_t)(i + 1);
-        printf("0x%x,", (int)i);
-    }
-    
-    LREP("\r\n\n");
-    
-    /* write data to erased sector */
-    FLASH_Program(ADDRESS_RW, 	&u8DataBuff[0],	512 );    
-    
-    LREP("flash return 0x%x\r\n\n", err);
-    
-  	
-    for(i = 0; i < 512; i++ )
-	{
-    	printf("0x%x,",*((uint8_t *)(i + ADDRESS_RW)));
-    	//printf("0x%x,", u8DataBuff[i]);
-	}
-
-    while(1)
-	{
-		ch = in_char();
-		out_char(ch);
-	
-	} 
-}
-#endif
 
 

@@ -13,10 +13,10 @@
 /**************************** Type Definitions *******************************/
 
 /***************** Macros (Inline Functions) Definitions *********************/
-/** Macro to convert a number to a string.	 */
-#define TOSTRING(x) _TOSTRING(x)
 /* A helper macro used by \ref TOSTRING.	*/
 #define _TOSTRING(x) #x
+/** Macro to convert a number to a string.	 */
+#define TOSTRING(x) _TOSTRING(x)
 
 #define BIT_SET_MASK(var, mask)          ((var) |= (mask))
 

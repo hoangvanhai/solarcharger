@@ -16,6 +16,7 @@
 #include <dispatcher.h>
 #include <bsp.h>
 #include <pid.h>
+#include <Transceiver.h>
 
 #define ADC_NUM_SAMP_HOLD       10
 
@@ -45,7 +46,7 @@ typedef enum EBuckerSM_ {
 
 
 typedef enum EDevCommand_ {
-	CMD_NONE = 0,
+	CMD_NONE_ = 0,
 	CMD_ON_OFF_CHARGE,
 	CMD_ON_OFF_VUSB,
 	CMD_SET_BOARD_ID,
@@ -119,6 +120,7 @@ typedef struct SApp_ {
 	task_handle 	task_shell;	
 	task_handle 	task_control;
 	task_handle		task_gui;
+	task_handle		task_trans;
 	
 	float			currDutyPer;
 	
@@ -127,7 +129,10 @@ typedef struct SApp_ {
 	
 	EDevCmd			eDevPendCmd;
 	float			cmdParam;
-	int16_t			downRate;		
+	int16_t			downRate;	
+	
+	STrans			sTransObj;
+	
 }SApp;
 
 

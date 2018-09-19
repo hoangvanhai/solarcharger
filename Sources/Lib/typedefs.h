@@ -45,6 +45,9 @@
 #define LPDWORD  DWORD*
 #endif
 
+typedef uint8_t BOOL;
+
+
 /*Two types compatible with Texas Instrument's DSP*/
 typedef long LDATA;	/* 32 bit "accumulator" (L_*) */
 typedef short DATA;	/* 16 bit "register"  (sw*) */

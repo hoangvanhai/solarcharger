@@ -46,6 +46,8 @@
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/bsp&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/console&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/Lib&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/Trans&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/Mem&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/hardware/common&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/hardware&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/hardware/cpu&quot;"/>

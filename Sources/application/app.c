@@ -1341,6 +1341,7 @@ void App_LoadConfig(SConfig *pHandle) {
 uint16_t App_SaveConfig(SConfig *pHandle) {
 	uint16_t err = 0;
 	uint32_t i, max_try = 4;
+	(void)max_try;
 	uint8_t *data = (uint8_t*)pHandle;
 	uint16_t size = sizeof(SConfig);
 	//LREP("size cfg = %d\r\n\n", size);

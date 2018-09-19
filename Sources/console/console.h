@@ -6,6 +6,8 @@
 #include "app_cfg.h"
 #include "io.h"
 #include <eof.h>
+#include <utils.h>
+#include <common/assert.h>
 
 /************************** Constant Definitions *****************************/
 #define SHELL_PROMPT "SHELL> "
@@ -62,6 +64,7 @@ typedef struct shell_command
 	
 	#define ASSERT_NONVOID(con,ret)	{if(!(con))	{LREP("\r\nASSERT in file " __FILE__ " at line "  TOSTRING(__LINE__) "\r\n"); return ret;}	}
 	#define ASSERT_VOID(con)        {if(!(con))	{LREP("\r\nASSERT in file " __FILE__ " at line "  TOSTRING(__LINE__) "\r\n"); return;	 }	}
+
 	//#define ASSERT(con)				{if(!(con))	{LREP("\r\nASSERT in file " __FILE__ " at line "  TOSTRING(__LINE__) "\r\n");			 }	}
 		
 	#define LREP	 				printf

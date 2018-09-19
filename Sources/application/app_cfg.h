@@ -71,4 +71,32 @@
 
 
 
+#define HW_INVALID			-1
+
+#define TICKS_PER_SECOND					2000
+#define DEBUG_BAUDRATE		115200L
+#define DATA_BAUDTATE		115200L
+
+
+#define RS485_DEBUG_RECV_ENABLE
+#define RS485_DEBUG_SEND_ENABLE
+
+
+#define RS485_UI_DATA_PORT_BASE		HW_INVALID
+#define RS485_UI_DATA_PIN_IDX		HW_INVALID
+
+
+#define APP_STAND_ALONE		1
+#define APP_RTOS			2
+
+#define APP_PLATFORM		APP_STAND_ALONE
+
+#define UI_UART_RX_PRIO			2
+#define UI_UART_TX_PRIO			2
+
+#define TRANSL1_V1		1
+#define TRANSL1_V2		2
+
+#define TRANSL1_VER		TRANSL1_V1
+
 #endif /* APP_CFG_H_ */
