@@ -189,9 +189,22 @@ void App_Init(SApp *pApp) {
 		App_LoadConfig(&cfg);
 	}
 	
-	if(pApp->sCfg.log > 0) {
+	if(pApp->sCfg.log == TRUE) {
 		Timer_Start(pApp->hTimerGui);
 	}
+	
+	if(pApp->sCfg.vUsb == TRUE) {
+		GPIO_SET_HIGH_CTRL_VUSB_EN();
+	} else {
+		GPIO_SET_LOW_CTRL_VUSB_EN();
+	}
+	
+	if(pApp->sCfg.charg == TRUE) {
+		App_ClearDevState(pApp, DS_USER_DISABLE);
+	} else {
+		App_SetDevState(pApp, DS_USER_DISABLE);
+	}
+	
 #if APP_PROCESS_METHOD == APP_PROCESS_IN_BGND
 	Timer_Start(pApp->hTimerUpdate);
 #endif
